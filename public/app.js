@@ -104,7 +104,7 @@ const App = (() => {
     const val = parseFloat(document.getElementById('bw-input').value);
     if (!val) return toast('Enter a weight', 'error');
     post('/api/bodyweight', { weight_kg: val })
-      .then(() => { toast('Weight logged ✓'); loadDashboard(); })
+      .then(() => { toast('Weight logged '); loadDashboard(); })
       .catch(() => toast('Error', 'error'));
   }
 
@@ -202,7 +202,7 @@ const App = (() => {
     activeWorkoutId = null;
     document.getElementById('active-workout').classList.add('hidden');
     document.getElementById('set-list').innerHTML = '';
-    toast('Workout saved! 🎉');
+    toast('Workout saved!');
     loadWorkouts();
   }
 
@@ -272,7 +272,7 @@ const App = (() => {
       equipment: document.getElementById('ex-equipment').value,
       instructions: document.getElementById('ex-instructions').value,
     });
-    toast('Exercise added ✓');
+    toast('Exercise added');
     hideAddExercise();
     loadExercises();
   }
@@ -457,7 +457,7 @@ const App = (() => {
     if (!amount || amount <= 0) return toast('Enter amount in grams', 'error');
     if (!addFoodMealId) return;
     await post(`/api/meals/${addFoodMealId}/foods`, { food_id: foodId, amount_g: amount });
-    toast('Food added ✓');
+    toast('Food added');
     document.getElementById('food-amount').value = '';
     loadMeals();
   }
