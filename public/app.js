@@ -133,7 +133,20 @@ const App = (() => {
   }
 
   async function startWorkout() {
-    const name = prompt('Workout name (e.g. Push Day, Leg Day):', 'Workout ' + new Date().toLocaleDateString());
+    const modal = document.getElementById('workoutModal');
+    const input = document.getElementById('workoutInput');
+    const saveBtn = document.getElementById('saveWorkoutBtn');
+    const cancelBtn = document.getElementById('cancelWorkoutBtn');
+
+    input.value = 'Workout ' + new Date().toLocaleDateString();
+    modal.style.display = 'flex';
+    input.select();
+
+    const name = await new Promise(resolve => {
+      saveBtn.onclick = () => { modal.style.display = 'none'; resolve(input.value.trim()); };
+      cancelBtn.onclick = () => { modal.style.display = 'none'; resolve(null); };
+    });
+
     if (!name) return;
     const w = await post('/api/workouts', { name });
     activeWorkoutId = w.id;

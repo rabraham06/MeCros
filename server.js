@@ -315,7 +315,7 @@ Use realistic average values for this food.`
   });
 
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`GymTracker running → http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`MeCros running → http://localhost:${PORT}`));
 
 }).catch(err => {
   console.error('Failed to initialise database:', err);
