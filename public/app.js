@@ -167,7 +167,7 @@ const App = (() => {
     const set_number = sameExSets.length + 1;
 
     await post(`/api/workouts/${activeWorkoutId}/sets`, { exercise_id, set_number, reps, weight_kg });
-    toast('Set logged ✓');
+    toast('Set logged');
     loadActiveSets();
     document.getElementById('set-weight').value = '';
     document.getElementById('set-reps').value = '';
@@ -355,7 +355,7 @@ const App = (() => {
     await post('/api/meals', { name, logged_at: date + 'T12:00:00' });
     document.getElementById('meal-name').value = '';
     document.getElementById('add-meal-form').classList.add('hidden');
-    toast('Meal created ✓');
+    toast('Meal created');
     loadMeals();
   }
 
