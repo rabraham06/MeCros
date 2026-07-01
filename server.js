@@ -241,6 +241,13 @@ Use realistic average values for this food.`
     res.json(db.prepare('SELECT * FROM meals WHERE id=?').get(r.lastInsertRowid));
   });
 
+  app.patch('/api/meals/:id', (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name required' });
+    db.prepare('UPDATE meals SET name=? WHERE id=? AND user_id=?').run(name, req.params.id, USER_ID);
+    res.json({ ok: true });
+  });
+
   app.delete('/api/meals/:id', (req, res) => {
     db.prepare('DELETE FROM meal_foods WHERE meal_id=?').run(req.params.id);
     db.prepare('DELETE FROM meals WHERE id=? AND user_id=?').run(req.params.id, USER_ID);
