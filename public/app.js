@@ -27,6 +27,16 @@ const App = (() => {
     setTimeout(() => t.classList.add('hidden'), 2500);
   }
 
+  function confirmDialog(message) {
+    return new Promise(resolve => {
+      const modal = document.getElementById('confirmModal');
+      document.getElementById('confirmMessage').textContent = message;
+      modal.style.display = 'flex';
+      document.getElementById('confirmOkBtn').onclick = () => { modal.style.display = 'none'; resolve(true); };
+      document.getElementById('confirmCancelBtn').onclick = () => { modal.style.display = 'none'; resolve(false); };
+    });
+  }
+
   function localDateStr(date = new Date()) {
     return date.toLocaleDateString('en-CA'); // returns YYYY-MM-DD in local time
   }
@@ -220,7 +230,7 @@ const App = (() => {
   }
 
   async function deleteWorkout(id) {
-    if (!confirm('Delete this workout?')) return;
+    if (!await confirmDialog('This workout and all its sets will be permanently deleted.')) return;
     await del(`/api/workouts/${id}`);
     loadWorkouts();
     toast('Deleted');
@@ -342,8 +352,13 @@ const App = (() => {
         </div>`).join('');
       div.innerHTML = `
         <div class="meal-header">
-          <h3>${m.name}</h3>
+          <div style="display:flex;align-items:center;gap:.5rem;flex:1;min-width:0">
+            <h3 id="meal-name-${m.id}">${m.name}</h3>
+            <input id="meal-name-input-${m.id}" class="input hidden" value="${m.name}" style="font-size:1rem;font-weight:600;height:32px;padding:.25rem .5rem" />
+          </div>
           <div style="display:flex;gap:.5rem">
+            <button class="btn btn-sm" id="meal-edit-btn-${m.id}" onclick="App.startEditMeal(${m.id})">Edit Meal Name</button>
+            <button class="btn btn-sm btn-primary hidden" id="meal-save-btn-${m.id}" onclick="App.saveMealName(${m.id})">Save</button>
             <button class="btn btn-sm btn-primary" onclick="App.openAddFoodToMeal(${m.id}, '${m.name}')">+ Food</button>
             <button class="btn btn-sm btn-danger" onclick="App.deleteMeal(${m.id})">Delete</button>
           </div>
@@ -357,6 +372,22 @@ const App = (() => {
         </div>`;
       el.appendChild(div);
     });
+  }
+
+  function startEditMeal(id) {
+    document.getElementById('meal-name-' + id).classList.add('hidden');
+    document.getElementById('meal-name-input-' + id).classList.remove('hidden');
+    document.getElementById('meal-edit-btn-' + id).classList.add('hidden');
+    document.getElementById('meal-save-btn-' + id).classList.remove('hidden');
+    document.getElementById('meal-name-input-' + id).focus();
+  }
+
+  async function saveMealName(id) {
+    const name = document.getElementById('meal-name-input-' + id).value.trim();
+    if (!name) return toast('Name cannot be empty', 'error');
+    await patch(`/api/meals/${id}`, { name });
+    toast('Meal renamed ✓');
+    loadMeals();
   }
 
   function showAddMeal() { document.getElementById('add-meal-form').classList.remove('hidden'); }
@@ -373,7 +404,7 @@ const App = (() => {
   }
 
   async function deleteMeal(id) {
-    if (!confirm('Delete this meal?')) return;
+    if (!await confirmDialog('This meal and all its foods will be permanently deleted.')) return;
     await del(`/api/meals/${id}`);
     loadMeals();
   }
@@ -636,7 +667,7 @@ const App = (() => {
   return {
     logWeight, startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout,
     loadExercises, showAddExercise, hideAddExercise, addExercise,
-    showAddMeal, addMeal, deleteMeal, openAddFoodToMeal, hideAddFoodToMeal,
+    showAddMeal, addMeal, deleteMeal, startEditMeal, saveMealName, openAddFoodToMeal, hideAddFoodToMeal,
     searchFoods, addFoodToMeal, deleteMealFood, estimateMacros, saveAiEstimate, discardAiEstimate,
     loadExerciseProgress,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
