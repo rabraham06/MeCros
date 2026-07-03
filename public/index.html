@@ -236,6 +236,18 @@
 
 </main>
 
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" class="modal" style="display:none">
+  <div class="modal-box" style="max-width:380px">
+    <h2 style="margin-bottom:.5rem" id="confirmTitle">Are you sure?</h2>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem" id="confirmMessage"></p>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn" id="confirmCancelBtn">Cancel</button>
+      <button class="btn" id="confirmOkBtn" style="background:var(--accent2);border-color:var(--accent2);color:#fff">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW WORKOUT MODAL -->
 <div id="workoutModal" class="modal" style="display:none">
   <div class="modal-box" style="max-width:400px">
