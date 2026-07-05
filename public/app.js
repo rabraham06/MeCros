@@ -395,7 +395,9 @@ const App = (() => {
   async function addMeal() {
     const name = document.getElementById('meal-name').value.trim();
     if (!name) return toast('Name required', 'error');
-    const date = document.getElementById('meal-date').value || localDateStr();
+    const dateInput = document.getElementById('meal-date');
+    if (!dateInput.value) dateInput.value = localDateStr();
+    const date = dateInput.value;
     await post('/api/meals', { name, logged_at: date + 'T12:00:00' });
     document.getElementById('meal-name').value = '';
     document.getElementById('add-meal-form').classList.add('hidden');
@@ -667,7 +669,7 @@ const App = (() => {
   return {
     logWeight, startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout,
     loadExercises, showAddExercise, hideAddExercise, addExercise,
-    showAddMeal, addMeal, deleteMeal, startEditMeal, saveMealName, openAddFoodToMeal, hideAddFoodToMeal,
+    loadMeals, showAddMeal, addMeal, deleteMeal, startEditMeal, saveMealName, openAddFoodToMeal, hideAddFoodToMeal,
     searchFoods, addFoodToMeal, deleteMealFood, estimateMacros, saveAiEstimate, discardAiEstimate,
     loadExerciseProgress,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
