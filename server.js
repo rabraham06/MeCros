@@ -212,7 +212,7 @@ Use realistic average values for this food.`
   app.get('/api/meals', (req, res) => {
     const { date } = req.query;
     const d = date || new Date().toISOString().slice(0, 10);
-    const meals = db.prepare(
+const meals = db.prepare(
       "SELECT * FROM meals WHERE user_id=? AND substr(logged_at,1,10)=? ORDER BY logged_at ASC"
     ).all(USER_ID, d);
 
@@ -237,7 +237,7 @@ Use realistic average values for this food.`
     const { name, logged_at } = req.body;
     const r = db.prepare(
       'INSERT INTO meals (user_id, name, logged_at) VALUES (?, ?, ?)'
-    ).run(USER_ID, name, logged_at || new Date().toISOString());
+    ).run(USER_ID, name, logged_at);
     res.json(db.prepare('SELECT * FROM meals WHERE id=?').get(r.lastInsertRowid));
   });
 
