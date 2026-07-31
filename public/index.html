@@ -17,7 +17,6 @@
     <button type="button" class="nav-btn" data-tab="exercises">Exercises</button>
     <button type="button" class="nav-btn" data-tab="records">PRs</button>
     <button type="button" class="nav-btn" data-tab="nutrition">Nutrition</button>
-    <button type="button" class="nav-btn" data-tab="progress">Progress</button>
     <button type="button" class="nav-btn" data-tab="goals">Goals</button>
   </nav>
 </header>
@@ -211,24 +210,6 @@
       <div style="margin-top:.75rem">
         <button type="button" class="btn" onclick="App.hideAddFoodToMeal()">Done</button>
       </div>
-    </div>
-  </section>
-
-  <!-- ── PROGRESS ──────────────────────────────────────────────────── -->
-  <section id="tab-progress" class="tab">
-    <h1>Progress</h1>
-    <div class="card" style="margin-bottom:1rem">
-      <h2>Exercise Strength Progress</h2>
-      <div class="form-row" style="margin-bottom:1rem">
-        <select id="prog-exercise" class="input" aria-label="Select exercise for progress chart" onchange="App.loadExerciseProgress()">
-          <option value="">Select exercise…</option>
-        </select>
-      </div>
-      <canvas id="strength-chart" height="120"></canvas>
-    </div>
-    <div class="card">
-      <h2>Macro Trends (30 days)</h2>
-      <canvas id="macro-chart" height="120"></canvas>
     </div>
   </section>
 
