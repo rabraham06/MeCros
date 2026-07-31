@@ -5,8 +5,6 @@ const App = (() => {
   let aiEstimateData  = null;
   let toastTimer      = null;
   let bwChart         = null;
-  let strengthChart   = null;
-  let macroChart      = null;
 
   // ── HTTP helpers ───────────────────────────────────────────────────────────
   async function api(method, path, body) {
@@ -91,7 +89,6 @@ const App = (() => {
           exercises: loadExercises,
           records:   loadPRs,
           nutrition: loadMeals,
-          progress:  loadProgress,
           goals:     loadGoals,
         };
         loaders[btn.dataset.tab]?.();
@@ -738,78 +735,6 @@ const App = (() => {
     loadMeals();
   }
 
-  // ── Progress ───────────────────────────────────────────────────────────────
-  async function loadProgress() {
-    const exercises = await get('/api/exercises');
-    const sel = document.getElementById('prog-exercise');
-    sel.innerHTML = '<option value="">Select exercise…</option>';
-    exercises.forEach(e => {
-      const opt = document.createElement('option');
-      opt.value = e.id;
-      opt.textContent = e.name;
-      sel.appendChild(opt);
-    });
-    loadMacroProgress();
-  }
-
-  async function loadExerciseProgress() {
-    const id = document.getElementById('prog-exercise').value;
-    if (!id) return;
-    const data = await get(`/api/progress/exercise/${id}`);
-    const canvas = document.getElementById('strength-chart');
-    if (strengthChart) strengthChart.destroy();
-    if (!data.length) return;
-    strengthChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: data.map(d => new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
-        datasets: [
-          {
-            label: 'Max Weight (lbs)',
-            data: data.map(d => d.max_weight),
-            borderColor: cssVar('--accent'),
-            backgroundColor: 'rgba(108,99,255,.15)',
-            tension: 0.3, fill: true, yAxisID: 'y',
-          },
-          {
-            label: 'Volume (lbs·reps)',
-            data: data.map(d => d.volume),
-            borderColor: cssVar('--success'),
-            backgroundColor: 'rgba(76,175,125,.1)',
-            tension: 0.3, fill: true, yAxisID: 'y1',
-          },
-        ]
-      },
-      options: {
-        ...chartOpts(),
-        scales: {
-          x:  axisStyle(),
-          y:  { ...axisStyle(), type: 'linear', position: 'left',  title: { display: true, text: 'Weight (lbs)', color: cssVar('--text-muted') } },
-          y1: { ...axisStyle(), type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Volume', color: cssVar('--text-muted') } },
-        },
-      },
-    });
-  }
-
-  async function loadMacroProgress() {
-    const data = await get('/api/progress/macros');
-    const canvas = document.getElementById('macro-chart');
-    if (macroChart) macroChart.destroy();
-    if (!data.length) return;
-    macroChart = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: data.map(d => new Date(d.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
-        datasets: [
-          { label: 'Protein (g)', data: data.map(d => d.protein), backgroundColor: 'rgba(76,175,125,.85)',  stack: 'a' },
-          { label: 'Carbs (g)',   data: data.map(d => d.carbs),   backgroundColor: 'rgba(245,166,35,.85)', stack: 'a' },
-          { label: 'Fat (g)',     data: data.map(d => d.fat),     backgroundColor: 'rgba(255,101,132,.85)', stack: 'a' },
-        ]
-      },
-      options: chartOpts('g'),
-    });
-  }
-
   // ── Goals ──────────────────────────────────────────────────────────────────
   async function loadGoals() {
     const goals = await get('/api/goals');
@@ -940,7 +865,6 @@ const App = (() => {
     openAddFoodToMeal, hideAddFoodToMeal,
     searchFoods, addFoodToMeal, deleteMealFood,
     estimateMacros, saveAiEstimate, discardAiEstimate,
-    loadExerciseProgress,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
   };
 })();
