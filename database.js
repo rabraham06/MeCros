@@ -58,7 +58,9 @@ async function initDb() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL DEFAULT 'Athlete',
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      token TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -153,12 +155,6 @@ async function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
   `);
-
-  // Seed default user
-  const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get();
-  if (userCount.c === 0) {
-    db.prepare("INSERT INTO users (name) VALUES (?)").run('Athlete');
-  }
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
