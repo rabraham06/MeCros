@@ -6,11 +6,27 @@ const App = (() => {
   let toastTimer      = null;
   let bwChart         = null;
 
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  const token = () => localStorage.getItem('mecros_token');
+
+  function logout() {
+    fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token() } })
+      .finally(() => {
+        localStorage.removeItem('mecros_token');
+        localStorage.removeItem('mecros_username');
+        window.location.href = '/login.html';
+      });
+  }
+
   // ── HTTP helpers ───────────────────────────────────────────────────────────
   async function api(method, path, body) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() },
+    };
     if (body !== undefined) opts.body = JSON.stringify(body);
     const res = await fetch(path, opts);
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   }
@@ -835,6 +851,18 @@ const App = (() => {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   function init() {
+    // Redirect to login if no token
+    if (!token()) { window.location.href = '/login.html'; return; }
+
+    // Show username and logout button in header
+    const nav = document.querySelector('.app-nav');
+    const userEl = document.createElement('div');
+    userEl.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto';
+    userEl.innerHTML = `
+      <span style="font-size:.8rem;color:var(--text-muted)">${esc(localStorage.getItem('mecros_username') || '')}</span>
+      <button type="button" class="btn btn--sm" onclick="App.logout()">Sign out</button>`;
+    nav.after(userEl);
+
     initNav();
     document.getElementById('meal-date').value = localDateStr();
     loadDashboard();
@@ -856,6 +884,7 @@ const App = (() => {
   document.addEventListener('DOMContentLoaded', init);
 
   return {
+    logout,
     logWeight,
     startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout, closeModal,
     loadExercises, showAddExercise, hideAddExercise, addExercise,
