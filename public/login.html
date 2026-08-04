@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MeCros — Sign In</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -109,6 +110,25 @@
     }
     .input::placeholder { color: var(--text-muted); }
 
+    .input-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .input-wrap .input {
+      padding-left: 2.5rem;
+      margin-bottom: 0;
+    }
+    .input-icon {
+      position: absolute;
+      left: .75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1rem;
+      pointer-events: none;
+      line-height: 1;
+    }
+
     .btn {
       font-family: var(--font);
       width: 100%;
@@ -153,23 +173,38 @@
 
   <div id="loginForm">
     <label for="loginUser">Username</label>
-    <input id="loginUser" class="input" type="text" placeholder="your username" autocomplete="username" />
+    <div class="input-wrap">
+      <i class='bx bxs-user input-icon'></i>
+      <input id="loginUser" class="input" type="text" placeholder="your username" autocomplete="username" />
+    </div>
 
     <label for="loginPass">Password</label>
-    <input id="loginPass" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+    <div class="input-wrap">
+      <i class='bx bxs-lock-alt input-icon'></i>
+      <input id="loginPass" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
 
     <button type="button" class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
   </div>
 
   <div id="registerForm" style="display:none">
     <label for="regUser">Username</label>
-    <input id="regUser" class="input" type="text" placeholder="choose a username" autocomplete="username" />
+    <div class="input-wrap">
+      <i class='bx bxs-user input-icon'></i>
+      <input id="regUser" class="input" type="text" placeholder="choose a username" autocomplete="username" />
+    </div>
 
     <label for="regPass">Password</label>
-    <input id="regPass" class="input" type="password" placeholder="at least 6 characters" autocomplete="new-password" />
+    <div class="input-wrap">
+      <i class='bx bxs-lock-alt input-icon'></i>
+      <input id="regPass" class="input" type="password" placeholder="at least 6 characters" autocomplete="new-password" />
+    </div>
 
     <label for="regPass2">Confirm Password</label>
-    <input id="regPass2" class="input" type="password" placeholder="repeat password" autocomplete="new-password" />
+    <div class="input-wrap">
+      <i class='bx bxs-lock-alt input-icon'></i>
+      <input id="regPass2" class="input" type="password" placeholder="repeat password" autocomplete="new-password" />
+    </div>
 
     <button type="button" class="btn" id="registerBtn" onclick="doRegister()">Create Account</button>
   </div>
