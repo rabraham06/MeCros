@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const Anthropic = require('@anthropic-ai/sdk');
 const initDb = require('./database');
@@ -29,20 +30,88 @@ app.use('/api/foods/estimate', rateLimit({
   message: { error: 'AI estimate limit reached — try again in a minute.' },
 }));
 
-const USER_ID = 1;
+// ── Auth helpers ──────────────────────────────────────────────────────────────
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = stored.split(':');
+  const attempt = crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(attempt), Buffer.from(hash));
+}
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
 
 initDb().then(db => {
 
+  // ── Auth middleware ───────────────────────────────────────────────────────
+  function requireAuth(req, res, next) {
+    const header = req.headers['authorization'] || '';
+    if (!header.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+    const token = header.slice(7);
+    const user = db.prepare('SELECT id, username FROM users WHERE token=?').get(token);
+    if (!user) return res.status(401).json({ error: 'Invalid or expired token' });
+    req.userId = user.id;
+    req.username = user.username;
+    next();
+  }
+
+  // ── Auth routes (public — no token required) ──────────────────────────────
+  app.post('/api/auth/register', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+    if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const existing = db.prepare('SELECT id FROM users WHERE username=?').get(username);
+    if (existing) return res.status(409).json({ error: 'Username already taken' });
+    try {
+      const password_hash = hashPassword(password);
+      const token = generateToken();
+      const r = db.prepare('INSERT INTO users (username, password_hash, token) VALUES (?, ?, ?)').run(username, password_hash, token);
+      res.json({ token, userId: r.lastInsertRowid, username });
+    } catch (err) {
+      res.status(500).json({ error: 'Registration failed' });
+    }
+  });
+
+  app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+    const user = db.prepare('SELECT * FROM users WHERE username=?').get(username);
+    if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+    try {
+      if (!verifyPassword(password, user.password_hash)) return res.status(401).json({ error: 'Invalid username or password' });
+      const token = generateToken();
+      db.prepare('UPDATE users SET token=? WHERE id=?').run(token, user.id);
+      res.json({ token, userId: user.id, username: user.username });
+    } catch {
+      res.status(401).json({ error: 'Invalid username or password' });
+    }
+  });
+
+  app.post('/api/auth/logout', requireAuth, (req, res) => {
+    db.prepare('UPDATE users SET token=NULL WHERE id=?').run(req.userId);
+    res.json({ ok: true });
+  });
+
+  // All routes below this line require a valid token
+  app.use('/api', requireAuth);
+
   // ─── DASHBOARD ───────────────────────────────────────────────────────────
   app.get('/api/dashboard', (req, res) => {
-    const totalWorkouts = db.prepare('SELECT COUNT(*) as c FROM workouts WHERE user_id=?').get(USER_ID).c;
+    const totalWorkouts = db.prepare('SELECT COUNT(*) as c FROM workouts WHERE user_id=?').get(req.userId).c;
     const lastWorkout = db.prepare(
       'SELECT name, started_at FROM workouts WHERE user_id=? ORDER BY started_at DESC LIMIT 1'
-    ).get(USER_ID);
-    const prCount = db.prepare('SELECT COUNT(*) as c FROM personal_records WHERE user_id=?').get(USER_ID).c;
+    ).get(req.userId);
+    const prCount = db.prepare('SELECT COUNT(*) as c FROM personal_records WHERE user_id=?').get(req.userId).c;
     const latestWeight = db.prepare(
       'SELECT weight_kg, logged_at FROM body_weight WHERE user_id=? ORDER BY logged_at DESC LIMIT 1'
-    ).get(USER_ID);
+    ).get(req.userId);
     const todayMacros = db.prepare(`
       SELECT
         ROUND(SUM(mf.amount_g * f.calories_per_100g / 100), 1) as calories,
@@ -53,7 +122,7 @@ initDb().then(db => {
       JOIN meal_foods mf ON mf.meal_id = m.id
       JOIN foods f ON f.id = mf.food_id
       WHERE m.user_id=? AND substr(m.logged_at,1,10)=substr(datetime('now','localtime'),1,10)
-    `).get(USER_ID);
+    `).get(req.userId);
 
     res.json({ totalWorkouts, lastWorkout, prCount, latestWeight, todayMacros });
   });
@@ -81,26 +150,26 @@ initDb().then(db => {
   app.get('/api/workouts', (req, res) => {
     res.json(db.prepare(
       'SELECT * FROM workouts WHERE user_id=? ORDER BY started_at DESC LIMIT 50'
-    ).all(USER_ID));
+    ).all(req.userId));
   });
 
   app.post('/api/workouts', (req, res) => {
     const { name, notes } = req.body;
     const r = db.prepare(
       'INSERT INTO workouts (user_id, name, notes) VALUES (?, ?, ?)'
-    ).run(USER_ID, name, notes || '');
+    ).run(req.userId, name, notes || '');
     res.json(db.prepare('SELECT * FROM workouts WHERE id=?').get(r.lastInsertRowid));
   });
 
   app.patch('/api/workouts/:id/finish', (req, res) => {
     db.prepare("UPDATE workouts SET finished_at=datetime('now') WHERE id=? AND user_id=?")
-      .run(req.params.id, USER_ID);
+      .run(req.params.id, req.userId);
     res.json({ ok: true });
   });
 
   app.delete('/api/workouts/:id', (req, res) => {
     db.prepare('DELETE FROM workout_sets WHERE workout_id=?').run(req.params.id);
-    db.prepare('DELETE FROM workouts WHERE id=? AND user_id=?').run(req.params.id, USER_ID);
+    db.prepare('DELETE FROM workouts WHERE id=? AND user_id=?').run(req.params.id, req.userId);
     res.json({ ok: true });
   });
 
@@ -123,13 +192,13 @@ initDb().then(db => {
     if (weight_kg && reps) {
       const existing = db.prepare(
         'SELECT * FROM personal_records WHERE user_id=? AND exercise_id=? ORDER BY weight_kg DESC, reps DESC LIMIT 1'
-      ).get(USER_ID, exercise_id);
+      ).get(req.userId, exercise_id);
       const isNewPR = !existing || weight_kg > existing.weight_kg ||
         (weight_kg === existing.weight_kg && reps > existing.reps);
       if (isNewPR) {
         db.prepare(
           'INSERT INTO personal_records (user_id, exercise_id, weight_kg, reps, workout_id) VALUES (?, ?, ?, ?, ?)'
-        ).run(USER_ID, exercise_id, weight_kg, reps, req.params.id);
+        ).run(req.userId, exercise_id, weight_kg, reps, req.params.id);
       }
     }
 
@@ -149,7 +218,7 @@ initDb().then(db => {
       JOIN exercises e ON e.id = pr.exercise_id
       WHERE pr.user_id=?
       ORDER BY pr.achieved_at DESC
-    `).all(USER_ID));
+    `).all(req.userId));
   });
 
   app.get('/api/records/bests', (req, res) => {
@@ -161,26 +230,26 @@ initDb().then(db => {
       WHERE pr.user_id=?
       GROUP BY pr.exercise_id
       ORDER BY e.name
-    `).all(USER_ID));
+    `).all(req.userId));
   });
 
   // ─── BODY WEIGHT ──────────────────────────────────────────────────────────
   app.get('/api/bodyweight', (req, res) => {
     res.json(db.prepare(
       'SELECT * FROM body_weight WHERE user_id=? ORDER BY logged_at ASC'
-    ).all(USER_ID));
+    ).all(req.userId));
   });
 
   app.post('/api/bodyweight', (req, res) => {
     const { weight_kg, logged_at } = req.body;
     const r = db.prepare(
       'INSERT INTO body_weight (user_id, weight_kg, logged_at) VALUES (?, ?, ?)'
-    ).run(USER_ID, weight_kg, logged_at || new Date().toISOString());
+    ).run(req.userId, weight_kg, logged_at || new Date().toISOString());
     res.json(db.prepare('SELECT * FROM body_weight WHERE id=?').get(r.lastInsertRowid));
   });
 
   app.delete('/api/bodyweight/:id', (req, res) => {
-    db.prepare('DELETE FROM body_weight WHERE id=? AND user_id=?').run(req.params.id, USER_ID);
+    db.prepare('DELETE FROM body_weight WHERE id=? AND user_id=?').run(req.params.id, req.userId);
     res.json({ ok: true });
   });
 
@@ -233,7 +302,7 @@ Use realistic average values for this food.`
     const d = date || new Date().toISOString().slice(0, 10);
 const meals = db.prepare(
       "SELECT * FROM meals WHERE user_id=? AND substr(logged_at,1,10)=? ORDER BY logged_at ASC"
-    ).all(USER_ID, d);
+    ).all(req.userId, d);
 
     const result = meals.map(m => {
       const foods = db.prepare(`
@@ -256,20 +325,20 @@ const meals = db.prepare(
     const { name, logged_at } = req.body;
     const r = db.prepare(
       'INSERT INTO meals (user_id, name, logged_at) VALUES (?, ?, ?)'
-    ).run(USER_ID, name, logged_at);
+    ).run(req.userId, name, logged_at);
     res.json(db.prepare('SELECT * FROM meals WHERE id=?').get(r.lastInsertRowid));
   });
 
   app.patch('/api/meals/:id', (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
-    db.prepare('UPDATE meals SET name=? WHERE id=? AND user_id=?').run(name, req.params.id, USER_ID);
+    db.prepare('UPDATE meals SET name=? WHERE id=? AND user_id=?').run(name, req.params.id, req.userId);
     res.json({ ok: true });
   });
 
   app.delete('/api/meals/:id', (req, res) => {
     db.prepare('DELETE FROM meal_foods WHERE meal_id=?').run(req.params.id);
-    db.prepare('DELETE FROM meals WHERE id=? AND user_id=?').run(req.params.id, USER_ID);
+    db.prepare('DELETE FROM meals WHERE id=? AND user_id=?').run(req.params.id, req.userId);
     res.json({ ok: true });
   });
 
@@ -288,25 +357,25 @@ const meals = db.prepare(
 
   // ─── GOALS ────────────────────────────────────────────────────────────────
   app.get('/api/goals', (req, res) => {
-    res.json(db.prepare('SELECT * FROM goals WHERE user_id=? ORDER BY created_at DESC').all(USER_ID));
+    res.json(db.prepare('SELECT * FROM goals WHERE user_id=? ORDER BY created_at DESC').all(req.userId));
   });
 
   app.post('/api/goals', (req, res) => {
     const { type, target_value, unit, deadline } = req.body;
     const r = db.prepare(
       'INSERT INTO goals (user_id, type, target_value, unit, deadline) VALUES (?, ?, ?, ?, ?)'
-    ).run(USER_ID, type, target_value, unit, deadline || null);
+    ).run(req.userId, type, target_value, unit, deadline || null);
     res.json(db.prepare('SELECT * FROM goals WHERE id=?').get(r.lastInsertRowid));
   });
 
   app.patch('/api/goals/:id', (req, res) => {
     const { achieved } = req.body;
-    db.prepare('UPDATE goals SET achieved=? WHERE id=? AND user_id=?').run(achieved ? 1 : 0, req.params.id, USER_ID);
+    db.prepare('UPDATE goals SET achieved=? WHERE id=? AND user_id=?').run(achieved ? 1 : 0, req.params.id, req.userId);
     res.json({ ok: true });
   });
 
   app.delete('/api/goals/:id', (req, res) => {
-    db.prepare('DELETE FROM goals WHERE id=? AND user_id=?').run(req.params.id, USER_ID);
+    db.prepare('DELETE FROM goals WHERE id=? AND user_id=?').run(req.params.id, req.userId);
     res.json({ ok: true });
   });
 
@@ -320,7 +389,7 @@ const meals = db.prepare(
       GROUP BY substr(w.started_at,1,10)
       ORDER BY w.started_at ASC
       LIMIT 30
-    `).all(req.params.id, USER_ID));
+    `).all(req.params.id, req.userId));
   });
 
   app.get('/api/progress/macros', (req, res) => {
@@ -337,7 +406,7 @@ const meals = db.prepare(
       GROUP BY substr(m.logged_at,1,10)
       ORDER BY date ASC
       LIMIT 30
-    `).all(USER_ID));
+    `).all(req.userId));
   });
 
   const PORT = process.env.PORT || 3000;
