@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeCros — Setup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f1117;
+      --surface:    #1a1d27;
+      --surface2:   #22263a;
+      --border:     #2e3248;
+      --accent:     #6c63ff;
+      --danger:     #ff6584;
+      --success:    #4caf7d;
+      --text:       #e8eaf6;
+      --text-muted: #8b90a8;
+      --radius:     12px;
+      --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 4px 32px rgba(0,0,0,.45);
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: .25rem;
+      letter-spacing: -.02em;
+    }
+    .logo span { color: var(--accent); }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: .875rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: .5rem;
+    }
+
+    .field { margin-bottom: 1.25rem; }
+
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .4rem;
+    }
+
+    .input {
+      font-family: var(--font);
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .625rem .875rem;
+      color: var(--text);
+      font-size: .9375rem;
+      outline: none;
+      transition: border-color 150ms, box-shadow 150ms;
+    }
+    .input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.18);
+    }
+    .input::placeholder { color: var(--text-muted); }
+
+    .height-row { display: flex; gap: .5rem; }
+    .height-row .input { flex: 1; cursor: pointer; }
+
+    /* Toggle button group */
+    .toggle-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+    .toggle-btn {
+      font-family: var(--font);
+      flex: 1;
+      min-width: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .55rem .75rem;
+      color: var(--text-muted);
+      font-size: .8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background 150ms, border-color 150ms, color 150ms;
+      line-height: 1.3;
+    }
+    .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+    .toggle-btn.active {
+      background: rgba(108,99,255,.18);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .toggle-btn .btn-sub {
+      display: block;
+      font-size: .7rem;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+    .toggle-btn.active .btn-sub { color: #a09af5; }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* Recommendation panel */
+    .rec-panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .rec-panel.show { display: block; }
+    .rec-panel__label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: .75rem;
+    }
+    .rec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+    .rec-item { text-align: center; }
+    .rec-item__value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .rec-item__unit {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: .2rem;
+    }
+
+    .btn {
+      font-family: var(--font);
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: .75rem;
+      color: #fff;
+      font-size: .9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 150ms;
+    }
+    .btn:hover { background: #7b73ff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .error {
+      background: rgba(255,101,132,.12);
+      border: 1px solid rgba(255,101,132,.3);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: .625rem .875rem;
+      font-size: .875rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .error.show { display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Me<span>Cros</span></div>
+  <p class="subtitle">Let's set up your profile</p>
+
+  <div id="errorMsg" class="error"></div>
+
+  <!-- Name -->
+  <div class="field">
+    <label for="displayName">Your Name</label>
+    <input id="displayName" class="input" type="text" placeholder="e.g. Rohan" autocomplete="given-name" oninput="recalc()" />
+  </div>
+
+  <!-- Height -->
+  <div class="field">
+    <label>Height</label>
+    <div class="height-row">
+      <select id="heightFt" class="input" onchange="recalc()">
+        <option value="">ft</option>
+        <option value="4">4 ft</option>
+        <option value="5">5 ft</option>
+        <option value="6">6 ft</option>
+        <option value="7">7 ft</option>
+      </select>
+      <select id="heightIn" class="input" onchange="recalc()">
+        <option value="">in</option>
+        <option value="0">0 in</option>
+        <option value="1">1 in</option>
+        <option value="2">2 in</option>
+        <option value="3">3 in</option>
+        <option value="4">4 in</option>
+        <option value="5">5 in</option>
+        <option value="6">6 in</option>
+        <option value="7">7 in</option>
+        <option value="8">8 in</option>
+        <option value="9">9 in</option>
+        <option value="10">10 in</option>
+        <option value="11">11 in</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Weight -->
+  <div class="field">
+    <label for="weight">Weight (lbs)</label>
+    <input id="weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" oninput="recalc()" />
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Activity Level -->
+  <div class="field">
+    <div class="section-label">Activity Level</div>
+    <div class="toggle-group" id="activityGroup">
+      <button type="button" class="toggle-btn" data-val="sedentary"
+              onclick="selectToggle('activityGroup', this)">
+        Sedentary
+        <span class="btn-sub">Desk job, little exercise</span>
+      </button>
+      <button type="button" class="toggle-btn" data-val="light"
+              onclick="selectToggle('activityGroup', this)">
+        Light
+        <span class="btn-sub">1–3 workouts/week</span>
+      </button>
+      <button type="button" class="toggle-btn" data-val="moderate"
+              onclick="selectToggle('activityGroup', this)">
+        Moderate
+        <span class="btn-sub">3–5 workouts/week</span>
+      </button>
+      <button type="button" class="toggle-btn" data-val="active"
+              onclick="selectToggle('activityGroup', this)">
+        Very Active
+        <span class="btn-sub">6–7 workouts/week</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Goal -->
+  <div class="field">
+    <div class="section-label">Your Goal</div>
+    <div class="toggle-group" id="goalGroup">
+      <button type="button" class="toggle-btn" data-val="bulking"
+              onclick="selectToggle('goalGroup', this)">
+        Bulking
+        <span class="btn-sub">Maximize muscle gain</span>
+      </button>
+      <button type="button" class="toggle-btn" data-val="lean_bulking"
+              onclick="selectToggle('goalGroup', this)">
+        Lean Bulking
+        <span class="btn-sub">Muscle with minimal fat</span>
+      </button>
+      <button type="button" class="toggle-btn" data-val="cutting"
+              onclick="selectToggle('goalGroup', this)">
+        Cutting
+        <span class="btn-sub">Lose fat, keep muscle</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Live recommendation panel -->
+  <div class="rec-panel" id="recPanel">
+    <div class="rec-panel__label">Your Daily Targets</div>
+    <div class="rec-grid">
+      <div class="rec-item">
+        <div class="rec-item__value" id="recCalories">—</div>
+        <div class="rec-item__unit">cal / day range</div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-item__value" id="recProtein">—</div>
+        <div class="rec-item__unit">grams protein / day range</div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn" id="saveBtn" onclick="saveProfile()" disabled>Save &amp; Get Started</button>
+</div>
+
+<script>
+  const token = localStorage.getItem('mecros_token');
+  if (!token) window.location.href = '/login.html';
+
+  // If profile already set up, skip to app
+  fetch('/api/profile', { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.json())
+    .then(p => { if (p) window.location.href = '/'; })
+    .catch(() => {});
+
+  const ACTIVITY    = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
+  const GOAL_CAL    = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
+  const GOAL_PROT   = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
+
+  function selectToggle(groupId, btn) {
+    document.querySelectorAll('#' + groupId + ' .toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    recalc();
+  }
+
+  function getSelected(groupId) {
+    return document.querySelector('#' + groupId + ' .toggle-btn.active')?.dataset.val || null;
+  }
+
+  function recalc() {
+    const weight    = parseFloat(document.getElementById('weight').value);
+    const activity  = getSelected('activityGroup');
+    const goal      = getSelected('goalGroup');
+    const name      = document.getElementById('displayName').value.trim();
+    const ft        = document.getElementById('heightFt').value;
+    const inch      = document.getElementById('heightIn').value;
+    const hasHeight = ft !== '' && inch !== '';
+
+    const ready = name && hasHeight && weight > 0 && activity && goal;
+    document.getElementById('saveBtn').disabled = !ready;
+
+    if (weight > 0 && activity && goal) {
+      const tdee    = weight * ACTIVITY[activity];
+      const [cLo, cHi] = GOAL_CAL[goal]  || [0, 200];
+      const [pLo, pHi] = GOAL_PROT[goal] || [0.8, 1.0];
+      document.getElementById('recCalories').textContent = Math.round(tdee + cLo) + '–' + Math.round(tdee + cHi);
+      document.getElementById('recProtein').textContent  = Math.round(weight * pLo) + '–' + Math.round(weight * pHi);
+      document.getElementById('recPanel').classList.add('show');
+    } else {
+      document.getElementById('recPanel').classList.remove('show');
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.toggle('show', !!msg);
+  }
+
+  async function saveProfile() {
+    const name     = document.getElementById('displayName').value.trim();
+    const ft       = parseFloat(document.getElementById('heightFt').value);
+    const inch     = parseFloat(document.getElementById('heightIn').value);
+    const weight   = parseFloat(document.getElementById('weight').value);
+    const activity = getSelected('activityGroup');
+    const goal     = getSelected('goalGroup');
+
+    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal) {
+      return showError('Please fill in all fields.');
+    }
+
+    const height_cm = ((ft * 12) + inch) * 2.54;
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch('/api/profile/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ display_name: name, height_cm, weight_lbs: weight, activity_level: activity, goal }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showError(data.error || 'Failed to save profile.');
+      window.location.href = '/';
+    } catch {
+      showError('Could not reach the server.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save & Get Started';
+    }
+  }
+</script>
+</body>
+</html>

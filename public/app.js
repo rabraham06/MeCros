@@ -122,7 +122,7 @@ const App = (() => {
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   async function loadDashboard() {
-    const d = await get('/api/dashboard');
+    const [d, profile] = await Promise.all([get('/api/dashboard'), get('/api/profile')]);
     document.getElementById('dash-workouts').textContent = d.totalWorkouts;
     document.getElementById('dash-prs').textContent      = d.prCount;
     document.getElementById('dash-weight').textContent   = d.latestWeight ? d.latestWeight.weight_kg + ' lbs' : '—';
@@ -131,15 +131,32 @@ const App = (() => {
       : 'No workouts yet';
 
     const m = d.todayMacros || {};
-    const goals = { cal: 2500, prot: 180, carb: 280, fat: 80 };
+    const calGoal  = profile?.daily_calories || 2500;
+    const protGoal = profile?.daily_protein  || 180;
+    // Estimate carb/fat targets from remaining calories after protein
+    const protCals = protGoal * 4;
+    const remaining = Math.max(0, calGoal - protCals);
+    const carbGoal = Math.round(remaining * 0.55 / 4);
+    const fatGoal  = Math.round(remaining * 0.45 / 9);
+
     const setBar = (barId, valId, val, goal, unit) => {
       document.getElementById(barId).style.width = Math.min(100, ((val || 0) / goal) * 100) + '%';
       document.getElementById(valId).textContent = (val || 0).toFixed(0) + unit;
     };
-    setBar('bar-cal',  'val-cal',  m.calories, goals.cal,  ' cal');
-    setBar('bar-prot', 'val-prot', m.protein,  goals.prot, 'g');
-    setBar('bar-carb', 'val-carb', m.carbs,    goals.carb, 'g');
-    setBar('bar-fat',  'val-fat',  m.fat,      goals.fat,  'g');
+    setBar('bar-cal',  'val-cal',  m.calories, calGoal,  ' cal');
+    setBar('bar-prot', 'val-prot', m.protein,  protGoal, 'g');
+    setBar('bar-carb', 'val-carb', m.carbs,    carbGoal, 'g');
+    setBar('bar-fat',  'val-fat',  m.fat,      fatGoal,  'g');
+
+    // Show targets beneath the macro bars if profile exists
+    const targetsEl = document.getElementById('macro-targets');
+    if (targetsEl && profile) {
+      const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[profile.goal] || '';
+      const calRange  = profile.cal_low  && profile.cal_high  ? `${profile.cal_low}–${profile.cal_high}`   : calGoal;
+      const protRange = profile.prot_low && profile.prot_high ? `${profile.prot_low}–${profile.prot_high}` : protGoal;
+      targetsEl.innerHTML = `<span class="macro-target-badge">${goalLabel}</span> Target: <strong>${calRange} cal</strong> · <strong>${protRange}g protein</strong>`;
+      targetsEl.classList.remove('hidden');
+    }
 
     loadBWChart();
   }
@@ -931,21 +948,28 @@ const App = (() => {
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
-  function init() {
+  async function init() {
     // Redirect to login if no token
     if (!token()) { window.location.href = '/login.html'; return; }
+
+    // Redirect to setup if profile not yet completed
+    const profile = await get('/api/profile');
+    if (!profile) { window.location.href = '/setup.html'; return; }
+
+    // Show display name from profile (fallback to username)
+    const displayName = profile.display_name || localStorage.getItem('mecros_username') || 'User';
 
     // Show username and logout button in header
     const nav = document.querySelector('.app-nav');
     const userEl = document.createElement('div');
     userEl.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto';
     userEl.innerHTML = `
-      <span style="font-size:.8rem;color:var(--text-muted)">${esc(localStorage.getItem('mecros_username') || '')}</span>
+      <span style="font-size:.8rem;color:var(--text-muted)">${esc(displayName)}</span>
       <button type="button" class="btn btn--sm" onclick="App.logout()">Sign out</button>`;
     nav.after(userEl);
 
     const usernameEl = document.getElementById('user-name');
-    if (usernameEl) usernameEl.textContent = localStorage.getItem('mecros_username') || 'User';
+    if (usernameEl) usernameEl.textContent = displayName;
 
     initNav();
     document.getElementById('meal-date').value = localDateStr();

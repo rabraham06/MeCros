@@ -134,6 +134,23 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .stat-value--red    { color: var(--danger); }
 
 /* ── Macro bars ────────────────────────────────────────────────────────────── */
+.macro-targets {
+  font-size: .8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.macro-target-badge {
+  display: inline-block;
+  background: rgba(108,99,255,.18);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: .1rem .45rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-right: .25rem;
+}
 .macro-bars { display: flex; flex-direction: column; gap: .875rem; }
 .macro-row  { display: flex; align-items: center; gap: .75rem; font-size: .875rem; }
 .macro-row__label { width: 58px; color: var(--text-muted); font-size: .8125rem; }
@@ -401,6 +418,32 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .ai-estimate-panel__name { font-weight: 600; margin-bottom: .5rem; font-size: .9rem; }
 .ai-estimate-panel__values { display: flex; gap: 1.5rem; font-size: .875rem; flex-wrap: wrap; margin-bottom: .75rem; }
 .ai-estimate-panel__actions { display: flex; gap: .5rem; }
+
+/* ── AI Meal Analyzer ──────────────────────────────────────────────────────── */
+.meal-analyzer { padding: 1rem 1.25rem; }
+.meal-analyzer__header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .75rem; }
+.meal-analyzer__title { font-weight: 700; font-size: .9375rem; color: var(--accent); }
+.meal-analyzer__hint { font-size: .8rem; color: var(--text-muted); }
+.meal-analyzer__input-row { display: flex; gap: .5rem; }
+.meal-analyzer__input-row .input { flex: 1; margin-bottom: 0; font-size: .875rem; }
+
+.meal-analysis-result { margin-top: .875rem; }
+.analysis-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8125rem;
+  margin-bottom: .75rem;
+}
+.analysis-table th,
+.analysis-table td {
+  padding: .35rem .5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.analysis-table th { color: var(--text-muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.analysis-table tbody tr:hover td { background: var(--surface2); }
+.analysis-table tfoot td { border-top: 2px solid var(--border); border-bottom: none; padding-top: .5rem; }
+.analysis-actions { display: flex; gap: .5rem; }
 
 /* ── Goal cards ────────────────────────────────────────────────────────────── */
 .goal-card {
