@@ -1012,27 +1012,10 @@ const App = (() => {
     // Redirect to login if no token
     if (!token()) { window.location.href = '/login.html'; return; }
 
-    // Fast-path: if we already cached that profile exists, skip the async fetch.
-    // Still verify once per session in the background to catch token invalidation.
-    const profileCached = localStorage.getItem('mecros_has_profile');
-    if (!profileCached) {
-      const profile = await get('/api/profile');
-      if (!profile) { window.location.href = '/setup.html'; return; }
-      localStorage.setItem('mecros_has_profile', '1');
-    } else {
-      // Background verify — silently log out if token was revoked server-side
-      get('/api/profile').then(p => {
-        if (!p) {
-          localStorage.removeItem('mecros_has_profile');
-          window.location.href = '/setup.html';
-        }
-      }).catch(() => {});
-    }
-
     document.querySelector('main').style.visibility = 'visible';
 
     // Show display name from profile (fallback to username)
-    const displayName = profile.display_name || localStorage.getItem('mecros_username') || 'User';
+    const displayName = localStorage.getItem('mecros_username') || 'User';
 
     // Show username and logout button in header
     const nav = document.querySelector('.app-nav');
