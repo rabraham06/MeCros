@@ -4,7 +4,6 @@ const App = (() => {
   let addFoodMealId   = null;
   let aiEstimateData  = null;
   let toastTimer      = null;
-  let bwChart         = null;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   const token = () => localStorage.getItem('mecros_token');
@@ -106,6 +105,7 @@ const App = (() => {
           records:   loadPRs,
           nutrition: loadMeals,
           goals:     loadGoals,
+          settings:  loadSettings,
         };
         loaders[btn.dataset.tab]?.();
       });
@@ -125,7 +125,6 @@ const App = (() => {
     const [d, profile] = await Promise.all([get('/api/dashboard'), get('/api/profile')]);
     document.getElementById('dash-workouts').textContent = d.totalWorkouts;
     document.getElementById('dash-prs').textContent      = d.prCount;
-    document.getElementById('dash-weight').textContent   = d.latestWeight ? d.latestWeight.weight_kg + ' lbs' : '—';
     document.getElementById('dash-last').textContent     = d.lastWorkout
       ? d.lastWorkout.name + ' · ' + fmtDatetime(d.lastWorkout.started_at)
       : 'No workouts yet';
@@ -158,37 +157,6 @@ const App = (() => {
       targetsEl.classList.remove('hidden');
     }
 
-    loadBWChart();
-  }
-
-  async function loadBWChart() {
-    const data = await get('/api/bodyweight');
-    const canvas = document.getElementById('bw-chart');
-    if (bwChart) bwChart.destroy();
-    if (!data.length) return;
-    bwChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: data.map(d => new Date(d.logged_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
-        datasets: [{
-          label: 'Weight (lbs)',
-          data: data.map(d => d.weight_kg),
-          borderColor: cssVar('--accent'),
-          backgroundColor: 'rgba(108,99,255,.15)',
-          tension: 0.3, fill: true, pointRadius: 4,
-        }]
-      },
-      options: chartOpts('lbs'),
-    });
-  }
-
-  function logWeight() {
-    const input = document.getElementById('bw-input');
-    const val = parseFloat(input.value);
-    if (!val) return toast('Enter a weight', 'error');
-    post('/api/bodyweight', { weight_kg: val })
-      .then(() => { input.value = ''; toast('Weight logged'); loadDashboard(); })
-      .catch(() => toast('Failed to log weight', 'error'));
   }
 
   // ── Workouts ───────────────────────────────────────────────────────────────
@@ -924,6 +892,97 @@ const App = (() => {
     loadGoals();
   }
 
+  // ── Settings ───────────────────────────────────────────────────────────────
+  async function loadSettings() {
+    const profile = await get('/api/profile');
+    if (!profile) return;
+
+    document.getElementById('set-name').value = profile.display_name || '';
+    document.getElementById('set-weight').value = profile.weight_lbs || '';
+
+    // Height: convert cm back to ft + in
+    if (profile.height_cm) {
+      const totalIn = Math.round(profile.height_cm / 2.54);
+      const ft = Math.floor(totalIn / 12);
+      const inch = totalIn % 12;
+      document.getElementById('set-height-ft').value = ft;
+      document.getElementById('set-height-in').value = inch;
+    }
+
+    // Activity toggle
+    document.querySelectorAll('#set-activity .settings-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === profile.activity_level);
+    });
+
+    // Goal toggle
+    document.querySelectorAll('#set-goal .settings-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === profile.goal);
+    });
+
+    updateSettingsTargets();
+  }
+
+  function settingsToggle(groupId, btn) {
+    document.querySelectorAll('#' + groupId + ' .settings-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateSettingsTargets();
+  }
+
+  function updateSettingsTargets() {
+    const weight   = parseFloat(document.getElementById('set-weight').value);
+    const activity = document.querySelector('#set-activity .settings-toggle.active')?.dataset.val;
+    const goal     = document.querySelector('#set-goal .settings-toggle.active')?.dataset.val;
+    const el       = document.getElementById('settings-targets');
+
+    if (!weight || !activity || !goal) { el.classList.add('hidden'); return; }
+
+    const ACTIVITY  = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
+    const CAL_RANGE = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
+    const PR_RANGE  = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
+    const tdee = weight * (ACTIVITY[activity] || 15.5);
+    const [cLo, cHi] = CAL_RANGE[goal]  || [0, 200];
+    const [pLo, pHi] = PR_RANGE[goal]   || [0.8, 1.0];
+    const calRange  = `${Math.round(tdee + cLo)}–${Math.round(tdee + cHi)}`;
+    const protRange = `${Math.round(weight * pLo)}–${Math.round(weight * pHi)}`;
+
+    const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[goal] || '';
+    el.innerHTML = `
+      <span class="macro-target-badge">${goalLabel}</span>
+      New targets: <strong>${calRange} cal/day</strong> · <strong>${protRange}g protein/day</strong>`;
+    el.classList.remove('hidden');
+  }
+
+  async function saveSettings() {
+    const name     = document.getElementById('set-name').value.trim();
+    const ft       = parseFloat(document.getElementById('set-height-ft').value);
+    const inch     = parseFloat(document.getElementById('set-height-in').value);
+    const weight   = parseFloat(document.getElementById('set-weight').value);
+    const activity = document.querySelector('#set-activity .settings-toggle.active')?.dataset.val;
+    const goal     = document.querySelector('#set-goal .settings-toggle.active')?.dataset.val;
+
+    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal) {
+      return toast('Please fill in all fields', 'error');
+    }
+
+    await post('/api/profile/setup', {
+      display_name: name,
+      height_cm: ((ft * 12) + inch) * 2.54,
+      weight_lbs: weight,
+      activity_level: activity,
+      goal,
+    });
+
+    toast('Settings saved');
+
+    // Update the displayed name everywhere
+    const usernameEl = document.getElementById('user-name');
+    if (usernameEl) usernameEl.textContent = name;
+    const headerName = document.querySelector('.app-nav + div span');
+    if (headerName) headerName.textContent = name;
+
+    loadDashboard();
+  }
+
   // ── Chart helpers ──────────────────────────────────────────────────────────
   function cssVar(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -964,6 +1023,7 @@ const App = (() => {
     const userEl = document.createElement('div');
     userEl.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto';
     userEl.innerHTML = `
+      <button type="button" class="btn btn--icon btn--sm" aria-label="Settings" title="Settings" onclick="document.querySelector('.nav-btn[data-tab=settings]')?.click()" style="font-size:1.1rem">⚙</button>
       <span style="font-size:.8rem;color:var(--text-muted)">${esc(displayName)}</span>
       <button type="button" class="btn btn--sm" onclick="App.logout()">Sign out</button>`;
     nav.after(userEl);
@@ -993,7 +1053,6 @@ const App = (() => {
 
   return {
     logout,
-    logWeight,
     startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout, closeModal,
     loadExercises, showAddExercise, hideAddExercise, addExercise,
     loadPRs,
@@ -1004,5 +1063,6 @@ const App = (() => {
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
+    loadSettings, saveSettings, settingsToggle,
   };
 })();
