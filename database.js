@@ -143,6 +143,18 @@ async function initDb() {
       FOREIGN KEY (food_id) REFERENCES foods(id)
     );
 
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id INTEGER PRIMARY KEY,
+      display_name TEXT NOT NULL,
+      height_cm REAL NOT NULL,
+      weight_lbs REAL NOT NULL,
+      activity_level TEXT NOT NULL,
+      goal TEXT NOT NULL,
+      daily_calories INTEGER NOT NULL,
+      daily_protein INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
     CREATE TABLE IF NOT EXISTS goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL DEFAULT 1,
