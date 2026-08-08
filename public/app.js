@@ -1009,13 +1009,19 @@ const App = (() => {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   async function init() {
-    // Redirect to login if no token
-    if (!token()) { window.location.href = '/login.html'; return; }
+    // Redirect to login if no token (synchronous — no flash)
+    if (!token()) { location.replace('/login.html'); return; }
+
+    // Validate token against the server before showing anything.
+    // If the token is stale (e.g. fresh deployment), api() redirects to login
+    // and returns undefined — we stay hidden and bail out.
+    const profile = await get('/api/profile');
+    if (profile === undefined) return;
 
     document.body.style.visibility = 'visible';
 
     // Show display name from profile (fallback to username)
-    const displayName = localStorage.getItem('mecros_username') || 'User';
+    const displayName = profile?.display_name || localStorage.getItem('mecros_username') || 'User';
 
     // Show username and logout button in header
     const nav = document.querySelector('.app-nav');
