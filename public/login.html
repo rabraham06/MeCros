@@ -278,7 +278,7 @@
       if (!res.ok) return showError(data.error || 'Registration failed.');
       localStorage.setItem('mecros_token',    data.token);
       localStorage.setItem('mecros_username', data.username);
-      window.location.href = '/';
+      window.location.href = '/setup.html';
     } catch {
       showError('Could not reach the server.');
     } finally {
