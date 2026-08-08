@@ -1012,16 +1012,24 @@ const App = (() => {
     // Redirect to login if no token (synchronous — no flash)
     if (!token()) { location.replace('/login.html'); return; }
 
-    // Validate token against the server before showing anything.
-    // If the token is stale (e.g. fresh deployment), api() redirects to login
-    // and returns undefined — we stay hidden and bail out.
+    // Returning users: show immediately using cached username so there's no blank delay.
+    // New/unknown sessions: stay hidden until the server confirms the token is valid.
+    const cachedUsername = localStorage.getItem('mecros_username');
+    if (cachedUsername) {
+      document.body.style.visibility = 'visible';
+    }
+
+    // Validate token server-side. On 401, api() redirects to login and returns undefined.
     const profile = await get('/api/profile');
     if (profile === undefined) return;
 
-    document.body.style.visibility = 'visible';
+    // First-time load path — token valid but no cached username yet
+    if (!cachedUsername) {
+      document.body.style.visibility = 'visible';
+    }
 
     // Show display name from profile (fallback to username)
-    const displayName = profile?.display_name || localStorage.getItem('mecros_username') || 'User';
+    const displayName = profile?.display_name || cachedUsername || 'User';
 
     // Show username and logout button in header
     const nav = document.querySelector('.app-nav');
