@@ -1012,7 +1012,7 @@ const App = (() => {
     // Redirect to login if no token
     if (!token()) { window.location.href = '/login.html'; return; }
 
-    document.querySelector('main').style.visibility = 'visible';
+    document.body.style.visibility = 'visible';
 
     // Show display name from profile (fallback to username)
     const displayName = localStorage.getItem('mecros_username') || 'User';

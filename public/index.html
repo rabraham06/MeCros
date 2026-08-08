@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MeCros</title>
+  <script>if (!localStorage.getItem('mecros_token')) location.replace('/login.html');</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body style="visibility:hidden">
 
 <header class="app-header">
   <div class="app-logo">Me<span>Cros</span></div>
@@ -22,7 +23,7 @@
   </nav>
 </header>
 
-<main style="visibility:hidden">
+<main>
 
   <!-- ── DASHBOARD ─────────────────────────────────────────────────── -->
   <section id="tab-dashboard" class="tab active" role="main">
