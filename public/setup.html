@@ -208,7 +208,7 @@
     .error.show { display: block; }
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 <div class="card">
   <div class="logo">Me<span>Cros</span></div>
   <p class="subtitle">Let's set up your profile</p>
@@ -329,13 +329,20 @@
 
 <script>
   const token = localStorage.getItem('mecros_token');
-  if (!token) window.location.href = '/login.html';
-
-  // If profile already set up, skip to app
-  fetch('/api/profile', { headers: { Authorization: 'Bearer ' + token } })
-    .then(r => r.json())
-    .then(p => { if (p) window.location.href = '/'; })
-    .catch(() => {});
+  if (!token) { window.location.href = '/login.html'; }
+  else {
+    fetch('/api/profile', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.json())
+      .then(p => {
+        if (p) {
+          localStorage.setItem('mecros_has_profile', '1');
+          window.location.href = '/';
+        } else {
+          document.body.style.visibility = 'visible';
+        }
+      })
+      .catch(() => { document.body.style.visibility = 'visible'; });
+  }
 
   const ACTIVITY    = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
   const GOAL_CAL    = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
@@ -407,6 +414,7 @@
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Failed to save profile.');
+      localStorage.setItem('mecros_has_profile', '1');
       window.location.href = '/';
     } catch {
       showError('Could not reach the server.');

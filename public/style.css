@@ -445,6 +445,53 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .analysis-table tfoot td { border-top: 2px solid var(--border); border-bottom: none; padding-top: .5rem; }
 .analysis-actions { display: flex; gap: .5rem; }
 
+/* ── Settings ──────────────────────────────────────────────────────────────── */
+.field-label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: .4rem;
+}
+
+.settings-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.settings-toggle {
+  font-family: var(--font);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .45rem .85rem;
+  color: var(--text-muted);
+  font-size: .8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.settings-toggle:hover { border-color: var(--accent); color: var(--text); }
+.settings-toggle.active {
+  background: rgba(108,99,255,.18);
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.settings-targets {
+  margin-top: 1rem;
+  padding: .75rem 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .875rem;
+  color: var(--text-muted);
+}
+
 /* ── Goal cards ────────────────────────────────────────────────────────────── */
 .goal-card {
   background: var(--surface);
