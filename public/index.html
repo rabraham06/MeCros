@@ -18,6 +18,7 @@
     <button type="button" class="nav-btn" data-tab="records">PRs</button>
     <button type="button" class="nav-btn" data-tab="nutrition">Nutrition</button>
     <button type="button" class="nav-btn" data-tab="goals">Goals</button>
+    <button type="button" class="nav-btn" data-tab="settings">Settings</button>
   </nav>
 </header>
 
@@ -257,6 +258,82 @@
       <div class="form-row" style="margin-top:.75rem">
         <button type="button" class="btn btn--primary" onclick="App.addGoal()">Save Goal</button>
         <button type="button" class="btn" onclick="App.hideAddGoal()">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SETTINGS ──────────────────────────────────────────────────── -->
+  <section id="tab-settings" class="tab">
+    <div class="tab-header">
+      <h1>Settings</h1>
+    </div>
+
+    <div class="card" style="max-width:520px">
+      <h2 style="margin-bottom:1.25rem">Profile</h2>
+
+      <div class="form-grid">
+        <div>
+          <label class="field-label" for="set-name">Display Name</label>
+          <input id="set-name" class="input" type="text" placeholder="Your name" />
+        </div>
+
+        <div>
+          <label class="field-label">Height</label>
+          <div style="display:flex;gap:.5rem">
+            <select id="set-height-ft" class="input">
+              <option value="">ft</option>
+              <option value="4">4 ft</option>
+              <option value="5">5 ft</option>
+              <option value="6">6 ft</option>
+              <option value="7">7 ft</option>
+            </select>
+            <select id="set-height-in" class="input">
+              <option value="">in</option>
+              <option value="0">0 in</option>
+              <option value="1">1 in</option>
+              <option value="2">2 in</option>
+              <option value="3">3 in</option>
+              <option value="4">4 in</option>
+              <option value="5">5 in</option>
+              <option value="6">6 in</option>
+              <option value="7">7 in</option>
+              <option value="8">8 in</option>
+              <option value="9">9 in</option>
+              <option value="10">10 in</option>
+              <option value="11">11 in</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label" for="set-weight">Weight (lbs)</label>
+          <input id="set-weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" />
+        </div>
+
+        <div>
+          <label class="field-label">Activity Level</label>
+          <div class="settings-toggle-group" id="set-activity">
+            <button type="button" class="settings-toggle" data-val="sedentary" onclick="App.settingsToggle('set-activity',this)">Sedentary</button>
+            <button type="button" class="settings-toggle" data-val="light"     onclick="App.settingsToggle('set-activity',this)">Light</button>
+            <button type="button" class="settings-toggle" data-val="moderate"  onclick="App.settingsToggle('set-activity',this)">Moderate</button>
+            <button type="button" class="settings-toggle" data-val="active"    onclick="App.settingsToggle('set-activity',this)">Very Active</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label">Goal</label>
+          <div class="settings-toggle-group" id="set-goal">
+            <button type="button" class="settings-toggle" data-val="bulking"      onclick="App.settingsToggle('set-goal',this)">Bulking</button>
+            <button type="button" class="settings-toggle" data-val="lean_bulking" onclick="App.settingsToggle('set-goal',this)">Lean Bulking</button>
+            <button type="button" class="settings-toggle" data-val="cutting"      onclick="App.settingsToggle('set-goal',this)">Cutting</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-targets" class="settings-targets hidden"></div>
+
+      <div class="form-row" style="margin-top:1.25rem">
+        <button type="button" class="btn btn--primary" onclick="App.saveSettings()">Save Changes</button>
       </div>
     </div>
   </section>
