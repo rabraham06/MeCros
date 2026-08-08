@@ -30,6 +30,15 @@ app.use('/api/foods/estimate', rateLimit({
   message: { error: 'AI estimate limit reached — try again in a minute.' },
 }));
 
+// AI meal analyzer: 10 requests per minute
+app.use('/api/nutrition/analyze', rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'AI analyze limit reached — try again in a minute.' },
+}));
+
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -275,6 +284,38 @@ Use realistic average values for this food.`
     } catch (err) {
       console.error('AI estimate error:', err.message);
       res.status(500).json({ error: 'Failed to estimate macros' });
+    }
+  });
+
+  // ─── AI MEAL ANALYZER ────────────────────────────────────────────────────
+  app.post('/api/nutrition/analyze', async (req, res) => {
+    const { description } = req.body;
+    if (!description || !description.trim()) return res.status(400).json({ error: 'Meal description required' });
+    try {
+      const message = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        messages: [{
+          role: 'user',
+          content: `A user ate: "${description.trim()}"
+
+Estimate the macronutrients for each food item and the combined total.
+Reply with ONLY a valid JSON object, no explanation or markdown:
+{
+  "items": [
+    { "name": "string", "calories": number, "protein": number, "carbs": number, "fat": number }
+  ],
+  "total": { "calories": number, "protein": number, "carbs": number, "fat": number }
+}
+Use realistic average values. Calories and macros are for the described portion (not per 100g).`,
+        }]
+      });
+      const raw = message.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      const json = JSON.parse(raw);
+      res.json(json);
+    } catch (err) {
+      console.error('AI meal analyze error:', err.message);
+      res.status(500).json({ error: 'Failed to analyze meal' });
     }
   });
 
