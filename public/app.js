@@ -460,6 +460,8 @@ const App = (() => {
     if (!dateInput.value) dateInput.value = localDateStr();
     const meals = await get('/api/meals?date=' + dateInput.value);
 
+    document.getElementById('meal-analyzer').classList.toggle('hidden', meals.length === 0);
+
     const totals = meals.reduce((acc, m) => ({
       calories: acc.calories + (m.macros.calories || 0),
       protein:  acc.protein  + (m.macros.protein  || 0),
@@ -751,6 +753,85 @@ const App = (() => {
     loadMeals();
   }
 
+  // ── AI Meal Analyzer ───────────────────────────────────────────────────────
+  async function analyzeMeal() {
+    const input = document.getElementById('meal-description');
+    const desc = input.value.trim();
+    if (!desc) return toast('Describe a meal first', 'error');
+    const btn = document.getElementById('analyze-btn');
+    btn.textContent = 'Analyzing…';
+    btn.disabled = true;
+    const resultEl = document.getElementById('meal-analysis-result');
+    resultEl.classList.add('hidden');
+    try {
+      const data = await post('/api/nutrition/analyze', { description: desc });
+      renderMealAnalysis(data, desc);
+    } catch {
+      toast('Could not analyze meal — try again', 'error');
+    } finally {
+      btn.textContent = 'Analyze';
+      btn.disabled = false;
+    }
+  }
+
+  function renderMealAnalysis(data, desc) {
+    const el = document.getElementById('meal-analysis-result');
+    const rows = data.items.map(item => `
+      <tr>
+        <td>${esc(item.name)}</td>
+        <td>${Math.round(item.calories)}</td>
+        <td>${item.protein.toFixed(1)}g</td>
+        <td>${item.carbs.toFixed(1)}g</td>
+        <td>${item.fat.toFixed(1)}g</td>
+      </tr>`).join('');
+
+    el.innerHTML = `
+      <table class="analysis-table">
+        <thead>
+          <tr><th>Item</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${Math.round(data.total.calories)}</strong></td>
+            <td><strong>${data.total.protein.toFixed(1)}g</strong></td>
+            <td><strong>${data.total.carbs.toFixed(1)}g</strong></td>
+            <td><strong>${data.total.fat.toFixed(1)}g</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="analysis-actions">
+        <button type="button" class="btn btn--primary btn--sm"
+                onclick="App.logAnalyzedMeal(${JSON.stringify(data).replace(/"/g, '&quot;')}, ${JSON.stringify(desc).replace(/"/g, '&quot;')})">
+          + Log this meal
+        </button>
+        <button type="button" class="btn btn--sm" onclick="document.getElementById('meal-analysis-result').classList.add('hidden')">
+          Dismiss
+        </button>
+      </div>`;
+    el.classList.remove('hidden');
+  }
+
+  async function logAnalyzedMeal(data, desc) {
+    const date = document.getElementById('meal-date').value || localDateStr();
+    const meal = await post('/api/meals', { name: desc.slice(0, 60), logged_at: date + 'T12:00:00' });
+    for (const item of data.items) {
+      const food = await post('/api/foods', {
+        name: item.name,
+        calories_per_100g:  item.calories,
+        protein_per_100g:   item.protein,
+        carbs_per_100g:     item.carbs,
+        fat_per_100g:       item.fat,
+      });
+      await post(`/api/meals/${meal.id}/foods`, { food_id: food.id, amount_g: 100 });
+    }
+    toast('Meal logged!');
+    document.getElementById('meal-analysis-result').classList.add('hidden');
+    document.getElementById('meal-description').value = '';
+    loadMeals();
+  }
+
   // ── Goals ──────────────────────────────────────────────────────────────────
   async function loadGoals() {
     const goals = await get('/api/goals');
@@ -863,6 +944,9 @@ const App = (() => {
       <button type="button" class="btn btn--sm" onclick="App.logout()">Sign out</button>`;
     nav.after(userEl);
 
+    const usernameEl = document.getElementById('user-name');
+    if (usernameEl) usernameEl.textContent = localStorage.getItem('mecros_username') || 'User';
+
     initNav();
     document.getElementById('meal-date').value = localDateStr();
     loadDashboard();
@@ -894,6 +978,7 @@ const App = (() => {
     openAddFoodToMeal, hideAddFoodToMeal,
     searchFoods, addFoodToMeal, deleteMealFood,
     estimateMacros, saveAiEstimate, discardAiEstimate,
+    analyzeMeal, logAnalyzedMeal,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
   };
 })();
