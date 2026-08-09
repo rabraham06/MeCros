@@ -6,14 +6,14 @@ const App = (() => {
   let toastTimer      = null;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const token = () => localStorage.getItem('mecros_token');
+  const token = () => sessionStorage.getItem('mecros_token');
 
   function logout() {
     fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token() } })
       .finally(() => {
-        localStorage.removeItem('mecros_token');
-        localStorage.removeItem('mecros_username');
-        localStorage.removeItem('mecros_has_profile');
+        sessionStorage.removeItem('mecros_token');
+        sessionStorage.removeItem('mecros_username');
+        sessionStorage.removeItem('mecros_has_profile');
         window.location.href = '/login.html';
       });
   }
@@ -1014,7 +1014,7 @@ const App = (() => {
 
     // Returning users: show immediately using cached username so there's no blank delay.
     // New/unknown sessions: stay hidden until the server confirms the token is valid.
-    const cachedUsername = localStorage.getItem('mecros_username');
+    const cachedUsername = sessionStorage.getItem('mecros_username');
     if (cachedUsername) {
       document.body.style.visibility = 'visible';
     }

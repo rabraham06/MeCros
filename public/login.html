@@ -213,7 +213,7 @@
 
 <script>
   // Redirect if already logged in
-  if (localStorage.getItem('mecros_token')) {
+  if (sessionStorage.getItem('mecros_token')) {
     window.location.href = '/';
   }
 
@@ -251,8 +251,8 @@
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Login failed.');
-      localStorage.setItem('mecros_token',    data.token);
-      localStorage.setItem('mecros_username', data.username);
+      sessionStorage.setItem('mecros_token',    data.token);
+      sessionStorage.setItem('mecros_username', data.username);
       window.location.href = '/';
     } catch {
       showError('Could not reach the server.');
@@ -276,8 +276,8 @@
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Registration failed.');
-      localStorage.setItem('mecros_token',    data.token);
-      localStorage.setItem('mecros_username', data.username);
+      sessionStorage.setItem('mecros_token',    data.token);
+      sessionStorage.setItem('mecros_username', data.username);
       window.location.href = '/setup.html';
     } catch {
       showError('Could not reach the server.');

@@ -328,14 +328,14 @@
 </div>
 
 <script>
-  const token = localStorage.getItem('mecros_token');
+  const token = sessionStorage.getItem('mecros_token');
   if (!token) { window.location.href = '/login.html'; }
   else {
     fetch('/api/profile', { headers: { Authorization: 'Bearer ' + token } })
       .then(r => r.json())
       .then(p => {
         if (p) {
-          localStorage.setItem('mecros_has_profile', '1');
+          sessionStorage.setItem('mecros_has_profile', '1');
           window.location.href = '/';
         } else {
           document.body.style.visibility = 'visible';
@@ -414,7 +414,7 @@
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Failed to save profile.');
-      localStorage.setItem('mecros_has_profile', '1');
+      sessionStorage.setItem('mecros_has_profile', '1');
       window.location.href = '/';
     } catch {
       showError('Could not reach the server.');
