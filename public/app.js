@@ -668,10 +668,23 @@ const App = (() => {
       info.appendChild(nameEl);
       info.appendChild(macroEl);
 
-      const addBtn = makeBtn('Add', 'btn--sm btn--primary', null, () => addFoodToMeal(f.id));
+      const controls = document.createElement('div');
+      controls.className = 'food-result-item__controls';
 
+      const amtInput = document.createElement('input');
+      amtInput.type        = 'number';
+      amtInput.className   = 'input food-result-item__amount';
+      amtInput.value       = '100';
+      amtInput.min         = '1';
+      amtInput.placeholder = 'g';
+      amtInput.setAttribute('aria-label', 'Amount in grams');
+
+      const addBtn = makeBtn('Add', 'btn--sm btn--primary', null, () => addFoodToMeal(f.id, parseFloat(amtInput.value)));
+
+      controls.appendChild(amtInput);
+      controls.appendChild(addBtn);
       div.appendChild(info);
-      div.appendChild(addBtn);
+      div.appendChild(controls);
       el.appendChild(div);
     });
   }
@@ -724,9 +737,8 @@ const App = (() => {
     document.getElementById('ai-estimate-result').classList.add('hidden');
   }
 
-  async function addFoodToMeal(foodId) {
-    const amount = parseFloat(document.getElementById('food-amount').value);
-    if (!amount || amount <= 0) return toast('Enter amount in grams', 'error');
+  async function addFoodToMeal(foodId, amount) {
+    if (!amount || amount <= 0) return toast('Enter a valid amount', 'error');
     if (!addFoodMealId) return;
     await post(`/api/meals/${addFoodMealId}/foods`, { food_id: foodId, amount_g: amount });
     toast('Food added');
