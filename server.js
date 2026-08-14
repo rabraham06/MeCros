@@ -441,6 +441,73 @@ const meals = db.prepare(
     res.json({ ok: true });
   });
 
+  // ─── MEAL SUGGESTIONS ─────────────────────────────────────────────────────
+  app.get('/api/nutrition/suggest', (req, res) => {
+    const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id=?').get(req.userId);
+    if (!profile) return res.json({ suggestions: [], calRemaining: 0, protRemaining: 0 });
+
+    const ranges = calcRanges(profile.weight_lbs, profile.activity_level, profile.goal);
+    const today  = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+    const logged = db.prepare(`
+      SELECT
+        COALESCE(SUM(mf.amount_g * f.calories_per_100g / 100), 0) AS calories,
+        COALESCE(SUM(mf.amount_g * f.protein_per_100g  / 100), 0) AS protein
+      FROM meals m
+      JOIN meal_foods mf ON mf.meal_id = m.id
+      JOIN foods f ON f.id = mf.food_id
+      WHERE m.user_id=? AND substr(m.logged_at,1,10)=?
+    `).get(req.userId, today);
+
+    const calRemaining  = Math.round(ranges.cal_low  - logged.calories);
+    const protRemaining = Math.round(ranges.prot_low - logged.protein);
+
+    if (calRemaining <= 0 && protRemaining <= 0) {
+      return res.json({ suggestions: [], calRemaining, protRemaining });
+    }
+
+    // Foods the user has previously logged, ranked by frequency
+    const userFoods = db.prepare(`
+      SELECT f.*, COUNT(mf.id) AS times_logged
+      FROM foods f
+      JOIN meal_foods mf ON mf.food_id = f.id
+      JOIN meals m ON m.id = mf.meal_id
+      WHERE m.user_id=?
+      GROUP BY f.id
+      ORDER BY times_logged DESC
+      LIMIT 30
+    `).all(req.userId);
+
+    if (!userFoods.length) {
+      return res.json({ suggestions: [], calRemaining, protRemaining });
+    }
+
+    const suggestions = userFoods.map(food => {
+      // Suggest a serving that covers ~40% of remaining calories, capped 50–400g, rounded to 25g
+      let g = calRemaining > 0
+        ? Math.round((calRemaining * 0.4) / (food.calories_per_100g / 100) / 25) * 25
+        : 100;
+      g = Math.max(50, Math.min(400, g || 100));
+
+      const scale   = g / 100;
+      const addCal  = +(food.calories_per_100g * scale).toFixed(0);
+      const addProt = +(food.protein_per_100g  * scale).toFixed(1);
+
+      // Score: protein contribution weighted most, then calorie fit, then familiarity
+      const protScore = protRemaining > 0 ? addProt / Math.max(protRemaining, 1) : 0;
+      const calFit    = calRemaining  > 0
+        ? 1 - Math.min(Math.abs(addCal - calRemaining * 0.4) / (calRemaining * 0.4 + 1), 1)
+        : 0;
+      const score = protScore * 0.6 + calFit * 0.3 + Math.min(food.times_logged * 0.02, 0.1);
+
+      return { id: food.id, name: food.name, brand: food.brand, suggested_g: g, added_calories: addCal, added_protein: addProt, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+    res.json({ suggestions, calRemaining, protRemaining });
+  });
+
   // ─── GOALS ────────────────────────────────────────────────────────────────
   app.get('/api/goals', (req, res) => {
     res.json(db.prepare('SELECT * FROM goals WHERE user_id=? ORDER BY created_at DESC').all(req.userId));
