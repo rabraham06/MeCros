@@ -392,9 +392,15 @@ const meals = db.prepare(
 
     const result = meals.map(m => {
       const foods = db.prepare(`
-        SELECT mf.*, f.name, f.calories_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g
+        SELECT MIN(mf.id) as id, mf.food_id,
+               SUM(mf.qty) as qty,
+               SUM(mf.amount_g) as amount_g,
+               ROUND(SUM(mf.amount_g) / SUM(mf.qty)) as serving_g,
+               f.name, f.calories_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g
         FROM meal_foods mf JOIN foods f ON f.id=mf.food_id
         WHERE mf.meal_id=?
+        GROUP BY mf.food_id
+        ORDER BY MIN(mf.id)
       `).all(m.id);
       const macros = foods.reduce((acc, f) => ({
         calories: acc.calories + (f.amount_g * f.calories_per_100g / 100),
@@ -448,6 +454,26 @@ const meals = db.prepare(
 
   app.delete('/api/mealfoods/:id', (req, res) => {
     db.prepare('DELETE FROM meal_foods WHERE id=?').run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  app.delete('/api/meals/:mealId/foods/:foodId', (req, res) => {
+    db.prepare('DELETE FROM meal_foods WHERE meal_id=? AND food_id=?').run(req.params.mealId, req.params.foodId);
+    res.json({ ok: true });
+  });
+
+  app.post('/api/meals/:mealId/foods/:foodId/decrement', (req, res) => {
+    const { mealId, foodId } = req.params;
+    const rows = db.prepare('SELECT * FROM meal_foods WHERE meal_id=? AND food_id=?').all(mealId, foodId);
+    if (!rows.length) return res.json({ ok: true });
+    const totalQty   = rows.reduce((s, r) => s + (r.qty || 1), 0);
+    const totalAmt   = rows.reduce((s, r) => s + r.amount_g, 0);
+    const servingG   = Math.round(totalAmt / totalQty);
+    db.prepare('DELETE FROM meal_foods WHERE meal_id=? AND food_id=?').run(mealId, foodId);
+    if (totalQty > 1) {
+      db.prepare('INSERT INTO meal_foods (meal_id, food_id, amount_g, qty) VALUES (?, ?, ?, ?)')
+        .run(mealId, foodId, servingG * (totalQty - 1), totalQty - 1);
+    }
     res.json({ ok: true });
   });
 

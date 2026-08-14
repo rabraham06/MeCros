@@ -375,9 +375,9 @@ textarea.input { resize: vertical; line-height: 1.5; }
 }
 .food-row:last-child { border-bottom: none; }
 .food-row__name { flex: 1; min-width: 0; }
-.food-row__amount { color: var(--text-muted); font-size: .8rem; }
-.food-row__macros { font-size: .8rem; color: var(--text-muted); white-space: nowrap; }
-.food-row__actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.food-row__macros { font-size: .8rem; color: var(--text-muted); white-space: nowrap; flex: 1; text-align: right; padding-right: .75rem; }
+.food-row__actions { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; }
+.food-row__qty { font-size: .8125rem; font-weight: 600; min-width: 2rem; text-align: center; }
 
 .meal-totals {
   display: flex;

@@ -578,24 +578,29 @@ const App = (() => {
           nameDiv.className = 'food-row__name';
           nameDiv.textContent = f.name;
 
-          const amtSpan = document.createElement('span');
-          amtSpan.className = 'food-row__amount';
-          amtSpan.textContent = f.amount_g + 'g';
-
           const macroSpan = document.createElement('span');
           macroSpan.className = 'food-row__macros';
-          const cal = (f.amount_g * f.calories_per_100g / 100).toFixed(0);
-          const prot = (f.amount_g * f.protein_per_100g / 100).toFixed(1);
-          macroSpan.textContent = `${cal} cal · ${prot}g P`;
+          const cal  = (f.amount_g * f.calories_per_100g / 100).toFixed(0);
+          const prot = (f.amount_g * f.protein_per_100g  / 100).toFixed(1);
+          macroSpan.textContent = `${f.serving_g}g · ${cal} cal · ${prot}g P`;
 
           const rowActions = document.createElement('div');
           rowActions.className = 'food-row__actions';
-          const foodDelBtn = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteMealFood(f.id));
-          foodDelBtn.setAttribute('aria-label', 'Remove ' + f.name);
-          rowActions.appendChild(foodDelBtn);
+
+          const minusBtn = makeBtn('−', 'btn--icon btn--sm', null, () => decrementMealFood(m.id, f.food_id));
+          const qtyLabel = document.createElement('span');
+          qtyLabel.className = 'food-row__qty';
+          qtyLabel.textContent = f.qty + '×';
+          const plusBtn  = makeBtn('+', 'btn--icon btn--sm btn--primary', null, () => incrementMealFood(m.id, f.food_id, f.serving_g));
+          const delBtn   = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteMealFood(m.id, f.food_id));
+          delBtn.setAttribute('aria-label', 'Remove ' + f.name);
+
+          rowActions.appendChild(minusBtn);
+          rowActions.appendChild(qtyLabel);
+          rowActions.appendChild(plusBtn);
+          rowActions.appendChild(delBtn);
 
           row.appendChild(nameDiv);
-          row.appendChild(amtSpan);
           row.appendChild(macroSpan);
           row.appendChild(rowActions);
           card.appendChild(row);
@@ -715,6 +720,14 @@ const App = (() => {
       const controls = document.createElement('div');
       controls.className = 'food-result-item__controls';
 
+      const qtyInput = document.createElement('input');
+      qtyInput.type        = 'number';
+      qtyInput.className   = 'input food-result-item__qty';
+      qtyInput.value       = '1';
+      qtyInput.min         = '1';
+      qtyInput.placeholder = 'qty';
+      qtyInput.setAttribute('aria-label', 'Quantity');
+
       const amtInput = document.createElement('input');
       amtInput.type        = 'number';
       amtInput.className   = 'input food-result-item__amount';
@@ -723,8 +736,13 @@ const App = (() => {
       amtInput.placeholder = 'g';
       amtInput.setAttribute('aria-label', 'Amount in grams');
 
-      const addBtn = makeBtn('Add', 'btn--sm btn--primary', null, () => addFoodToMeal(f.id, parseFloat(amtInput.value)));
+      const addBtn = makeBtn('Add', 'btn--sm btn--primary', null, () => {
+        const qty = Math.max(1, parseInt(qtyInput.value) || 1);
+        const grams = parseFloat(amtInput.value);
+        addFoodToMeal(f.id, grams * qty, qty);
+      });
 
+      controls.appendChild(qtyInput);
       controls.appendChild(amtInput);
       controls.appendChild(addBtn);
       div.appendChild(info);
@@ -781,17 +799,27 @@ const App = (() => {
     document.getElementById('ai-estimate-result').classList.add('hidden');
   }
 
-  async function addFoodToMeal(foodId, amount) {
+  async function addFoodToMeal(foodId, amount, qty = 1) {
     if (!amount || amount <= 0) return toast('Enter a valid amount', 'error');
     if (!addFoodMealId) return;
-    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: foodId, amount_g: amount });
-    toast('Food added');
+    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: foodId, amount_g: amount, qty });
+    toast(qty > 1 ? `${qty}× food added` : 'Food added');
     document.getElementById('food-amount').value = '';
     loadMeals();
   }
 
-  async function deleteMealFood(mfId) {
-    await del(`/api/mealfoods/${mfId}`);
+  async function incrementMealFood(mealId, foodId, servingG) {
+    await post(`/api/meals/${mealId}/foods`, { food_id: foodId, amount_g: servingG, qty: 1 });
+    loadMeals();
+  }
+
+  async function decrementMealFood(mealId, foodId) {
+    await post(`/api/meals/${mealId}/foods/${foodId}/decrement`);
+    loadMeals();
+  }
+
+  async function deleteMealFood(mealId, foodId) {
+    await del(`/api/meals/${mealId}/foods/${foodId}`);
     loadMeals();
   }
 
@@ -1135,7 +1163,7 @@ const App = (() => {
     loadMeals, loadSuggestions, quickAddSuggestion, showAddMeal, hideAddMeal, addMeal, deleteMeal,
     startEditMeal, saveMealName,
     openAddFoodToMeal, hideAddFoodToMeal,
-    searchFoods, addFoodToMeal, deleteMealFood,
+    searchFoods, addFoodToMeal, incrementMealFood, decrementMealFood, deleteMealFood,
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
