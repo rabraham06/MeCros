@@ -429,6 +429,16 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .meal-analyzer__input-row { display: flex; gap: .5rem; }
 .meal-analyzer__input-row .input { flex: 1; margin-bottom: 0; font-size: .875rem; }
 
+.suggestions-header { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; flex-wrap: wrap; }
+.suggestions-title { font-weight: 700; font-size: .9375rem; }
+.suggestions-gap { font-size: .8rem; color: var(--text-muted); }
+.suggestions-list { display: flex; flex-direction: column; gap: .35rem; }
+.suggestion-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .45rem .5rem; border-radius: var(--radius-sm); background: var(--surface2); }
+.suggestion-row__info { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.suggestion-row__name { font-size: .875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggestion-row__brand { font-weight: 400; color: var(--text-muted); }
+.suggestion-row__macros { font-size: .75rem; color: var(--text-muted); }
+
 .meal-analysis-result { margin-top: .875rem; }
 .analysis-table {
   width: 100%;
