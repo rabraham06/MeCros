@@ -847,14 +847,17 @@ const App = (() => {
 
   function renderMealAnalysis(data, desc) {
     const el = document.getElementById('meal-analysis-result');
-    const rows = data.items.map(item => `
+    const rows = data.items.map(item => {
+      const qty = Math.max(1, Math.round(item.qty) || 1);
+      return `
       <tr>
-        <td>${esc(item.name)}</td>
-        <td>${Math.round(item.calories)}</td>
-        <td>${item.protein.toFixed(1)}g</td>
-        <td>${item.carbs.toFixed(1)}g</td>
-        <td>${item.fat.toFixed(1)}g</td>
-      </tr>`).join('');
+        <td>${esc(item.name)}${qty > 1 ? ` <span style="color:var(--text-muted);font-size:.8em">${qty}×</span>` : ''}</td>
+        <td>${Math.round(item.calories * qty)}</td>
+        <td>${(item.protein * qty).toFixed(1)}g</td>
+        <td>${(item.carbs * qty).toFixed(1)}g</td>
+        <td>${(item.fat * qty).toFixed(1)}g</td>
+      </tr>`;
+    }).join('');
 
     el.innerHTML = `
       <table class="analysis-table">
@@ -893,6 +896,7 @@ const App = (() => {
     if (!mealId) return toast('Select a meal to add to', 'error');
     if (!lastAnalysisData) return;
     for (const item of lastAnalysisData.items) {
+      const qty = Math.max(1, Math.round(item.qty) || 1);
       const food = await post('/api/foods', {
         name: item.name,
         calories_per_100g: item.calories,
@@ -900,7 +904,7 @@ const App = (() => {
         carbs_per_100g:    item.carbs,
         fat_per_100g:      item.fat,
       });
-      await post(`/api/meals/${mealId}/foods`, { food_id: food.id, amount_g: 100 });
+      await post(`/api/meals/${mealId}/foods`, { food_id: food.id, amount_g: 100 * qty, qty });
     }
     toast('Foods added!');
     document.getElementById('meal-analysis-result').classList.add('hidden');

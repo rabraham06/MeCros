@@ -344,15 +344,17 @@ Use realistic average values for this food.`
           role: 'user',
           content: `A user ate: "${description.trim()}"
 
-Estimate the macronutrients for each food item and the combined total.
+Estimate the macronutrients for each distinct food item and the combined total.
+If the same food appears multiple times (e.g. "3 McChickens"), list it ONCE with qty set to the count.
 Reply with ONLY a valid JSON object, no explanation or markdown:
 {
   "items": [
-    { "name": "string", "calories": number, "protein": number, "carbs": number, "fat": number }
+    { "name": "string", "qty": number, "calories": number, "protein": number, "carbs": number, "fat": number }
   ],
   "total": { "calories": number, "protein": number, "carbs": number, "fat": number }
 }
-Use realistic average values. Calories and macros are for the described portion (not per 100g).`,
+calories/protein/carbs/fat are for ONE unit of that item (not the total qty, not per 100g).
+qty defaults to 1 if not a repeated item.`,
         }]
       });
       const raw = message.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
