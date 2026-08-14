@@ -430,10 +430,20 @@ const meals = db.prepare(
 
   app.post('/api/meals/:id/foods', (req, res) => {
     const { food_id, amount_g, qty = 1 } = req.body;
-    const r = db.prepare(
-      'INSERT INTO meal_foods (meal_id, food_id, amount_g, qty) VALUES (?, ?, ?, ?)'
-    ).run(req.params.id, food_id, amount_g, qty);
-    res.json(db.prepare('SELECT * FROM meal_foods WHERE id=?').get(r.lastInsertRowid));
+    const existing = db.prepare(
+      'SELECT * FROM meal_foods WHERE meal_id=? AND food_id=?'
+    ).get(req.params.id, food_id);
+    if (existing) {
+      db.prepare(
+        'UPDATE meal_foods SET qty=qty+?, amount_g=amount_g+? WHERE id=?'
+      ).run(qty, amount_g, existing.id);
+      res.json(db.prepare('SELECT * FROM meal_foods WHERE id=?').get(existing.id));
+    } else {
+      const r = db.prepare(
+        'INSERT INTO meal_foods (meal_id, food_id, amount_g, qty) VALUES (?, ?, ?, ?)'
+      ).run(req.params.id, food_id, amount_g, qty);
+      res.json(db.prepare('SELECT * FROM meal_foods WHERE id=?').get(r.lastInsertRowid));
+    }
   });
 
   app.delete('/api/mealfoods/:id', (req, res) => {
