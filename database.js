@@ -139,6 +139,7 @@ async function initDb() {
       meal_id INTEGER NOT NULL,
       food_id INTEGER NOT NULL,
       amount_g REAL NOT NULL,
+      qty INTEGER NOT NULL DEFAULT 1,
       FOREIGN KEY (meal_id) REFERENCES meals(id),
       FOREIGN KEY (food_id) REFERENCES foods(id)
     );
@@ -167,6 +168,9 @@ async function initDb() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
   `);
+
+  // Migrations
+  try { db.prepare('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1').run(); } catch {}
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
