@@ -408,6 +408,7 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .food-result-item__name { font-weight: 500; }
 .food-result-item__macros { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
 .food-result-item__controls { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+.food-result-item__qty    { width: 52px; padding: .35rem .5rem; font-size: .8125rem; text-align: center; }
 .food-result-item__amount { width: 72px; padding: .35rem .5rem; font-size: .8125rem; text-align: center; }
 
 .ai-estimate-panel {
