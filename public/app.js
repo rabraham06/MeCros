@@ -442,55 +442,14 @@ const App = (() => {
   }
 
   // ── Nutrition ──────────────────────────────────────────────────────────────
-  async function loadSuggestions() {
-    const el = document.getElementById('macro-suggestions');
-    const data = await get('/api/nutrition/suggest');
-    if (!data || !data.suggestions.length) { el.classList.add('hidden'); return; }
-
-    const { suggestions, calRemaining, protRemaining } = data;
-    const gapParts = [];
-    if (calRemaining  > 0) gapParts.push(`${calRemaining} cal`);
-    if (protRemaining > 0) gapParts.push(`${protRemaining}g protein`);
-    const gapText = gapParts.join(' · ');
-
-    el.classList.remove('hidden');
-    el.innerHTML = `
-      <div class="suggestions-header">
-        <span class="suggestions-title">💡 Suggestions to hit your targets</span>
-        <span class="suggestions-gap">Still need: ${esc(gapText)}</span>
-      </div>
-      <div class="suggestions-list" id="suggestions-list"></div>`;
-
-    const list = document.getElementById('suggestions-list');
-    suggestions.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'suggestion-row';
-      row.innerHTML = `
-        <div class="suggestion-row__info">
-          <span class="suggestion-row__name">${esc(s.name)}${s.brand ? ' <span class="suggestion-row__brand">(' + esc(s.brand) + ')</span>' : ''}</span>
-          <span class="suggestion-row__macros">${s.suggested_g}g · ${s.added_calories} cal · ${s.added_protein}g P</span>
-        </div>`;
-      const addBtn = makeBtn('+ Add', 'btn--sm btn--primary', null, () => quickAddSuggestion(s));
-      row.appendChild(addBtn);
-      list.appendChild(row);
-    });
-  }
-
-  async function quickAddSuggestion(s) {
-    if (!addFoodMealId) return toast('Open a meal first, then use a suggestion', 'error');
-    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: s.id, amount_g: s.suggested_g });
-    toast(`${s.name} added (${s.suggested_g}g)`);
-    loadMeals();
-  }
-
-  async function loadMeals() {
+async function loadMeals() {
     const dateInput = document.getElementById('meal-date');
     if (!dateInput.value) dateInput.value = localDateStr();
     const meals = await get('/api/meals?date=' + dateInput.value);
     currentMeals = meals || [];
 
     document.getElementById('meal-analyzer').classList.toggle('hidden', meals.length === 0);
-    loadSuggestions();
+
 
     const totals = meals.reduce((acc, m) => ({
       calories: acc.calories + (m.macros.calories || 0),
@@ -1164,7 +1123,7 @@ const App = (() => {
     startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout, closeModal,
     loadExercises, showAddExercise, hideAddExercise, addExercise,
     loadPRs,
-    loadMeals, loadSuggestions, quickAddSuggestion, showAddMeal, hideAddMeal, addMeal, deleteMeal,
+    loadMeals, showAddMeal, hideAddMeal, addMeal, deleteMeal,
     startEditMeal, saveMealName,
     openAddFoodToMeal, hideAddFoodToMeal,
     searchFoods, addFoodToMeal, incrementMealFood, decrementMealFood, deleteMealFood,
