@@ -466,14 +466,20 @@ const meals = db.prepare(
       return res.json({ suggestions: [], calRemaining, protRemaining });
     }
 
-    // Foods the user has previously logged, ranked by frequency
+    // Foods the user has previously logged — deduplicated by name, using their usual serving size
     const userFoods = db.prepare(`
-      SELECT f.*, COUNT(mf.id) AS times_logged
+      SELECT MIN(f.id) AS id, f.name, f.brand,
+             AVG(f.calories_per_100g) AS calories_per_100g,
+             AVG(f.protein_per_100g)  AS protein_per_100g,
+             AVG(f.carbs_per_100g)    AS carbs_per_100g,
+             AVG(f.fat_per_100g)      AS fat_per_100g,
+             COUNT(mf.id)             AS times_logged,
+             ROUND(AVG(mf.amount_g))  AS avg_amount_g
       FROM foods f
       JOIN meal_foods mf ON mf.food_id = f.id
       JOIN meals m ON m.id = mf.meal_id
       WHERE m.user_id=?
-      GROUP BY f.id
+      GROUP BY lower(f.name)
       ORDER BY times_logged DESC
       LIMIT 30
     `).all(req.userId);
@@ -483,11 +489,8 @@ const meals = db.prepare(
     }
 
     const suggestions = userFoods.map(food => {
-      // Suggest a serving that covers ~40% of remaining calories, capped 50–400g, rounded to 25g
-      let g = calRemaining > 0
-        ? Math.round((calRemaining * 0.4) / (food.calories_per_100g / 100) / 25) * 25
-        : 100;
-      g = Math.max(50, Math.min(400, g || 100));
+      // Use the user's own average serving size for this food
+      const g = Math.max(25, Math.round((food.avg_amount_g || 100) / 25) * 25);
 
       const scale   = g / 100;
       const addCal  = +(food.calories_per_100g * scale).toFixed(0);
