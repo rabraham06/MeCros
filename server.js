@@ -429,10 +429,10 @@ const meals = db.prepare(
   });
 
   app.post('/api/meals/:id/foods', (req, res) => {
-    const { food_id, amount_g } = req.body;
+    const { food_id, amount_g, qty = 1 } = req.body;
     const r = db.prepare(
-      'INSERT INTO meal_foods (meal_id, food_id, amount_g) VALUES (?, ?, ?)'
-    ).run(req.params.id, food_id, amount_g);
+      'INSERT INTO meal_foods (meal_id, food_id, amount_g, qty) VALUES (?, ?, ?, ?)'
+    ).run(req.params.id, food_id, amount_g, qty);
     res.json(db.prepare('SELECT * FROM meal_foods WHERE id=?').get(r.lastInsertRowid));
   });
 
