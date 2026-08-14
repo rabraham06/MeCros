@@ -4,6 +4,7 @@ const App = (() => {
   let addFoodMealId   = null;
   let aiEstimateData  = null;
   let toastTimer      = null;
+  let currentMeals    = [];
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   const token = () => sessionStorage.getItem('mecros_token');
@@ -486,6 +487,7 @@ const App = (() => {
     const dateInput = document.getElementById('meal-date');
     if (!dateInput.value) dateInput.value = localDateStr();
     const meals = await get('/api/meals?date=' + dateInput.value);
+    currentMeals = meals || [];
 
     document.getElementById('meal-analyzer').classList.toggle('hidden', meals.length === 0);
     loadSuggestions();
@@ -805,6 +807,7 @@ const App = (() => {
     resultEl.classList.add('hidden');
     try {
       const data = await post('/api/nutrition/analyze', { description: desc });
+      lastAnalysisData = data;
       renderMealAnalysis(data, desc);
     } catch {
       toast('Could not analyze meal — try again', 'error');
@@ -842,9 +845,11 @@ const App = (() => {
         </tfoot>
       </table>
       <div class="analysis-actions">
-        <button type="button" class="btn btn--primary btn--sm"
-                onclick="App.logAnalyzedMeal(${JSON.stringify(data).replace(/"/g, '&quot;')}, ${JSON.stringify(desc).replace(/"/g, '&quot;')})">
-          + Log this meal
+        <select id="analysis-meal-select" class="input" style="flex:1;min-width:0">
+          ${currentMeals.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')}
+        </select>
+        <button type="button" class="btn btn--primary btn--sm" onclick="App.logAnalyzedMeal()">
+          + Add to meal
         </button>
         <button type="button" class="btn btn--sm" onclick="document.getElementById('meal-analysis-result').classList.add('hidden')">
           Dismiss
@@ -853,22 +858,26 @@ const App = (() => {
     el.classList.remove('hidden');
   }
 
-  async function logAnalyzedMeal(data, desc) {
-    const date = document.getElementById('meal-date').value || localDateStr();
-    const meal = await post('/api/meals', { name: desc.slice(0, 60), logged_at: date + 'T12:00:00' });
-    for (const item of data.items) {
+  let lastAnalysisData = null;
+
+  async function logAnalyzedMeal() {
+    const mealId = document.getElementById('analysis-meal-select')?.value;
+    if (!mealId) return toast('Select a meal to add to', 'error');
+    if (!lastAnalysisData) return;
+    for (const item of lastAnalysisData.items) {
       const food = await post('/api/foods', {
         name: item.name,
-        calories_per_100g:  item.calories,
-        protein_per_100g:   item.protein,
-        carbs_per_100g:     item.carbs,
-        fat_per_100g:       item.fat,
+        calories_per_100g: item.calories,
+        protein_per_100g:  item.protein,
+        carbs_per_100g:    item.carbs,
+        fat_per_100g:      item.fat,
       });
-      await post(`/api/meals/${meal.id}/foods`, { food_id: food.id, amount_g: 100 });
+      await post(`/api/meals/${mealId}/foods`, { food_id: food.id, amount_g: 100 });
     }
-    toast('Meal logged!');
+    toast('Foods added!');
     document.getElementById('meal-analysis-result').classList.add('hidden');
     document.getElementById('meal-description').value = '';
+    lastAnalysisData = null;
     loadMeals();
   }
 
