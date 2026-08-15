@@ -1055,6 +1055,9 @@ async function loadMeals() {
 
     toast('Settings saved');
 
+    // Refresh profile so nutrition targets and dashboard stay in sync
+    currentProfile = await get('/api/profile');
+
     // Update the displayed name everywhere
     const usernameEl = document.getElementById('user-name');
     if (usernameEl) usernameEl.textContent = name;
@@ -1062,6 +1065,10 @@ async function loadMeals() {
     if (headerName) headerName.textContent = name;
 
     loadDashboard();
+    // Re-render nutrition targets if the nutrition tab has been loaded
+    if (!document.getElementById('nutrition-targets').classList.contains('hidden')) {
+      loadMeals();
+    }
   }
 
   // ── Chart helpers ──────────────────────────────────────────────────────────
