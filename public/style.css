@@ -423,6 +423,15 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .ai-estimate-panel__actions { display: flex; gap: .5rem; }
 
 /* ── AI Meal Analyzer ──────────────────────────────────────────────────────── */
+.nt-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: .6rem; }
+.nt-rows { display: flex; flex-direction: column; gap: .5rem; }
+.nt-row { display: flex; align-items: center; gap: .75rem; }
+.nt-name { font-size: .8125rem; font-weight: 500; width: 56px; flex-shrink: 0; }
+.nt-bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.nt-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; }
+.nt-bar--green { background: var(--success, #4caf7d); }
+.nt-range { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
+
 .meal-analyzer { padding: 1rem 1.25rem; }
 .meal-analyzer__header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .75rem; }
 .meal-analyzer__title { font-weight: 700; font-size: .9375rem; color: var(--accent); }
