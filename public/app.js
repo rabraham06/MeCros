@@ -5,6 +5,7 @@ const App = (() => {
   let aiEstimateData  = null;
   let toastTimer      = null;
   let currentMeals    = [];
+  let currentProfile  = null;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   const token = () => sessionStorage.getItem('mecros_token');
@@ -463,6 +464,31 @@ async function loadMeals() {
       <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value stat-value--green">${totals.protein.toFixed(1)}g</div></div>
       <div class="stat-card"><div class="stat-label">Carbs</div><div class="stat-value stat-value--yellow">${totals.carbs.toFixed(1)}g</div></div>
       <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--red">${totals.fat.toFixed(1)}g</div></div>`;
+
+    const targetsEl = document.getElementById('nutrition-targets');
+    if (currentProfile?.cal_low) {
+      const p = currentProfile;
+      const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[p.goal] || '';
+      const calPct  = Math.min(100, Math.round(totals.calories / p.cal_high  * 100));
+      const protPct = Math.min(100, Math.round(totals.protein  / p.prot_low  * 100));
+      targetsEl.innerHTML = `
+        <div class="nt-label">${esc(goalLabel)} Targets</div>
+        <div class="nt-rows">
+          <div class="nt-row">
+            <span class="nt-name">Calories</span>
+            <div class="nt-bar-wrap"><div class="nt-bar" style="width:${calPct}%"></div></div>
+            <span class="nt-range">${totals.calories.toFixed(0)} / ${p.cal_low}–${p.cal_high}</span>
+          </div>
+          <div class="nt-row">
+            <span class="nt-name">Protein</span>
+            <div class="nt-bar-wrap"><div class="nt-bar nt-bar--green" style="width:${protPct}%"></div></div>
+            <span class="nt-range">${totals.protein.toFixed(1)}g / ${p.prot_low}–${p.prot_high}g</span>
+          </div>
+        </div>`;
+      targetsEl.classList.remove('hidden');
+    } else {
+      targetsEl.classList.add('hidden');
+    }
 
     const el = document.getElementById('meal-list');
     el.innerHTML = '';
@@ -1076,6 +1102,7 @@ async function loadMeals() {
     // Validate token server-side. On 401, api() redirects to login and returns undefined.
     const profile = await get('/api/profile');
     if (profile === undefined) return;
+    currentProfile = profile;
 
     // First-time load path — token valid but no cached username yet
     if (!cachedUsername) {
