@@ -290,8 +290,16 @@
         </div>
 
         <div>
-          <label class="field-label" for="set-weight">Weight (lbs)</label>
-          <input id="set-weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" />
+          <label class="field-label" for="set-profile-weight">Weight (lbs)</label>
+          <input id="set-profile-weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" />
+        </div>
+
+        <div style="grid-column: 1 / -1">
+          <label class="field-label">Gender</label>
+          <div class="settings-toggle-group" id="set-gender">
+            <button type="button" class="settings-toggle" data-val="male"   onclick="App.settingsToggle('set-gender',this)">Male</button>
+            <button type="button" class="settings-toggle" data-val="female" onclick="App.settingsToggle('set-gender',this)">Female</button>
+          </div>
         </div>
 
         <div>
