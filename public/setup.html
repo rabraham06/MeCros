@@ -355,9 +355,9 @@
       .catch(() => { document.body.style.visibility = 'visible'; });
   }
 
-  const ACTIVITY    = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
-  const GOAL_CAL    = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
-  const GOAL_PROT   = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
+  const ACTIVITY_MULT = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+  const GOAL_CAL      = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
+  const GOAL_PROT     = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
 
   function selectToggle(groupId, btn) {
     document.querySelectorAll('#' + groupId + ' .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -373,24 +373,14 @@
     const weight    = parseFloat(document.getElementById('weight').value);
     const activity  = getSelected('activityGroup');
     const goal      = getSelected('goalGroup');
+    const gender    = getSelected('genderGroup');
     const name      = document.getElementById('displayName').value.trim();
-    const ft        = document.getElementById('heightFt').value;
-    const inch      = document.getElementById('heightIn').value;
-    const hasHeight = ft !== '' && inch !== '';
+    const ft        = parseFloat(document.getElementById('heightFt').value);
+    const inch      = parseFloat(document.getElementById('heightIn').value);
+    const hasHeight = !isNaN(ft) && !isNaN(inch);
 
-    const ready = name && hasHeight && weight > 0 && activity && goal;
+    const ready = name && hasHeight && weight > 0 && activity && goal && gender;
     document.getElementById('saveBtn').disabled = !ready;
-
-    if (weight > 0 && activity && goal) {
-      const tdee    = weight * ACTIVITY[activity];
-      const [cLo, cHi] = GOAL_CAL[goal]  || [0, 200];
-      const [pLo, pHi] = GOAL_PROT[goal] || [0.8, 1.0];
-      document.getElementById('recCalories').textContent = Math.round(tdee + cLo) + '–' + Math.round(tdee + cHi);
-      document.getElementById('recProtein').textContent  = Math.round(weight * pLo) + '–' + Math.round(weight * pHi);
-      document.getElementById('recPanel').classList.add('show');
-    } else {
-      document.getElementById('recPanel').classList.remove('show');
-    }
   }
 
   function showError(msg) {
@@ -412,7 +402,16 @@
       return showError('Please fill in all fields.');
     }
 
-    const height_cm = ((ft * 12) + inch) * 2.54;
+    const height_cm  = ((ft * 12) + inch) * 2.54;
+    const weight_kg  = weight / 2.2046;
+    const bmr        = gender === 'female'
+      ? (10 * weight_kg) + (6.25 * height_cm) - 286
+      : (10 * weight_kg) + (6.25 * height_cm) - 120;
+    const tdee       = bmr * (ACTIVITY_MULT[activity] || 1.55);
+    const [cLo, cHi] = GOAL_CAL[goal]  || [0, 200];
+    const [pLo, pHi] = GOAL_PROT[goal] || [0.8, 1.0];
+    const daily_calories = Math.round((tdee + cLo + tdee + cHi) / 2);
+    const daily_protein  = Math.round(weight * (pLo + pHi) / 2);
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
@@ -422,7 +421,7 @@
       const res = await fetch('/api/profile/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ display_name: name, height_cm, weight_lbs: weight, activity_level: activity, goal, gender }),
+        body: JSON.stringify({ display_name: name, height_cm, weight_lbs: weight, activity_level: activity, goal, gender, daily_calories, daily_protein }),
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Failed to save profile.');
