@@ -654,6 +654,19 @@ textarea.input { resize: vertical; line-height: 1.5; }
 }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+.app-footer {
+  position: fixed;
+  bottom: .75rem;
+  right: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .7rem;
+  letter-spacing: .12em;
+  color: #4a5280;
+  pointer-events: none;
+  z-index: 50;
+}
+
 /* ── Utilities ─────────────────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 .text-muted { color: var(--text-muted); }
