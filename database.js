@@ -35,9 +35,9 @@ function createWrapper(sqlDb) {
     };
   }
 
-  function exec(sql) {
+  function exec(sql, { persist = true } = {}) {
     sqlDb.exec(sql);
-    save();
+    if (persist) save();
   }
 
   function pragma(str) {
@@ -170,9 +170,11 @@ async function initDb() {
     );
   `);
 
-  // Migrations
-  try { db.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); } catch {}
-  try { db.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); } catch {}
+  // Migrations — run DDL in memory first, then do a single save at the end
+  let migrationRan = false;
+  try { sqlDb.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); migrationRan = true; } catch {}
+  try { sqlDb.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); migrationRan = true; } catch {}
+  if (migrationRan) save();
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
