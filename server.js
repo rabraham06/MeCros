@@ -56,7 +56,8 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-initDb().then(db => {
+const db = initDb();
+{
 
   // ── Auth middleware ───────────────────────────────────────────────────────
   function requireAuth(req, res, next) {
@@ -554,7 +555,4 @@ const meals = db.prepare(
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`MeCros running → http://localhost:${PORT}`));
 
-}).catch(err => {
-  console.error('Failed to initialise database:', err);
-  process.exit(1);
-});
+}

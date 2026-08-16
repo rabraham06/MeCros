@@ -1,59 +1,12 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
+const Database = require('better-sqlite3');
 const path = require('path');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'gymtracker.db');
 
-function createWrapper(sqlDb) {
-  function save() {
-    fs.writeFileSync(DB_PATH, Buffer.from(sqlDb.export()));
-  }
-
-  function prepare(sql) {
-    return {
-      run(...args) {
-        sqlDb.run(sql, args);
-        const res = sqlDb.exec('SELECT last_insert_rowid()');
-        save();
-        return { lastInsertRowid: res[0]?.values[0][0] };
-      },
-      get(...args) {
-        const stmt = sqlDb.prepare(sql);
-        stmt.bind(args);
-        const row = stmt.step() ? stmt.getAsObject() : undefined;
-        stmt.free();
-        return row;
-      },
-      all(...args) {
-        const stmt = sqlDb.prepare(sql);
-        stmt.bind(args);
-        const rows = [];
-        while (stmt.step()) rows.push(stmt.getAsObject());
-        stmt.free();
-        return rows;
-      }
-    };
-  }
-
-  function exec(sql, { persist = true } = {}) {
-    sqlDb.exec(sql);
-    if (persist) save();
-  }
-
-  function pragma(str) {
-    sqlDb.run('PRAGMA ' + str);
-  }
-
-  return { prepare, exec, pragma };
-}
-
-async function initDb() {
-  const SQL = await initSqlJs();
-  const sqlDb = fs.existsSync(DB_PATH)
-    ? new SQL.Database(fs.readFileSync(DB_PATH))
-    : new SQL.Database();
-
-  const db = createWrapper(sqlDb);
+function initDb() {
+  const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -170,11 +123,9 @@ async function initDb() {
     );
   `);
 
-  // Migrations — run DDL in memory first, then do a single save at the end
-  let migrationRan = false;
-  try { sqlDb.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); migrationRan = true; } catch {}
-  try { sqlDb.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); migrationRan = true; } catch {}
-  if (migrationRan) save();
+  // Migrations
+  try { db.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); } catch {}
+  try { db.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); } catch {}
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
@@ -204,7 +155,8 @@ async function initDb() {
       ['Running', 'Cardio', 'Full Body', 'Bodyweight', 'Steady state or interval running.'],
       ['Rowing Machine', 'Cardio', 'Full Body', 'Machine', 'Drive with legs first, lean back, pull handle to lower chest.'],
     ];
-    exercises.forEach(e => ins.run(...e));
+    const insertMany = db.transaction(rows => rows.forEach(e => ins.run(...e)));
+    insertMany(exercises);
   }
 
   // Seed common foods
@@ -230,7 +182,8 @@ async function initDb() {
       ['Pasta (cooked)', null, 131, 5, 25, 1.1],
       ['Bread (whole wheat)', null, 247, 13, 41, 4],
     ];
-    foods.forEach(f => ins.run(...f));
+    const insertMany = db.transaction(rows => rows.forEach(f => ins.run(...f)));
+    insertMany(foods);
   }
 
   return db;
