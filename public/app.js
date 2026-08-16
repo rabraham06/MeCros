@@ -1059,10 +1059,12 @@ async function loadMeals() {
       return toast('Please fill in all fields', 'error');
     }
 
+    const height_cm = ((ft * 12) + inch) * 2.54;
+
     try {
       await post('/api/profile/setup', {
         display_name: name,
-        height_cm: ((ft * 12) + inch) * 2.54,
+        height_cm,
         weight_lbs: weight,
         activity_level: activity,
         goal,
@@ -1074,8 +1076,31 @@ async function loadMeals() {
 
     toast('Settings saved');
 
-    // Refresh profile so nutrition targets and dashboard stay in sync
-    currentProfile = await get('/api/profile');
+    // Compute updated ranges locally so UI reflects changes immediately
+    const MULT = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+    const CAL  = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
+    const PR   = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
+    const wKg  = weight / 2.2046;
+    const bmr  = gender === 'female'
+      ? (10 * wKg) + (6.25 * height_cm) - 286
+      : (10 * wKg) + (6.25 * height_cm) - 120;
+    const tdee = bmr * (MULT[activity] || 1.55);
+    const [cLo, cHi] = CAL[goal]  || [0, 200];
+    const [pLo, pHi] = PR[goal]   || [0.8, 1.0];
+
+    currentProfile = {
+      ...currentProfile,
+      display_name: name,
+      weight_lbs: weight,
+      height_cm,
+      activity_level: activity,
+      goal,
+      gender,
+      cal_low:   Math.round(tdee + cLo),
+      cal_high:  Math.round(tdee + cHi),
+      prot_low:  Math.round(weight * pLo),
+      prot_high: Math.round(weight * pHi),
+    };
 
     // Update the displayed name everywhere
     const usernameEl = document.getElementById('user-name');
