@@ -229,7 +229,7 @@
   <!-- Name -->
   <div class="field">
     <label for="displayName">Your Name</label>
-    <input id="displayName" class="input" type="text" placeholder="e.g. Rohan" autocomplete="given-name" oninput="recalc()" />
+    <input id="displayName" class="input" type="text" placeholder="e.g. John" autocomplete="given-name" oninput="recalc()" />
   </div>
 
   <!-- Height -->
@@ -265,6 +265,21 @@
   <div class="field">
     <label for="weight">Weight (lbs)</label>
     <input id="weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" oninput="recalc()" />
+  </div>
+
+  <!-- Gender -->
+  <div class="field">
+    <div class="section-label">Gender</div>
+    <div class="toggle-group" id="genderGroup">
+      <button type="button" class="toggle-btn active" data-val="male"
+              onclick="selectToggle('genderGroup', this)">
+        Male
+      </button>
+      <button type="button" class="toggle-btn" data-val="female"
+              onclick="selectToggle('genderGroup', this)">
+        Female
+      </button>
+    </div>
   </div>
 
   <div class="divider"></div>
@@ -317,21 +332,6 @@
         Cutting
         <span class="btn-sub">Lose fat, keep muscle</span>
       </button>
-    </div>
-  </div>
-
-  <!-- Live recommendation panel -->
-  <div class="rec-panel" id="recPanel">
-    <div class="rec-panel__label">Your Daily Targets</div>
-    <div class="rec-grid">
-      <div class="rec-item">
-        <div class="rec-item__value" id="recCalories">—</div>
-        <div class="rec-item__unit">cal / day range</div>
-      </div>
-      <div class="rec-item">
-        <div class="rec-item__value" id="recProtein">—</div>
-        <div class="rec-item__unit">grams protein / day range</div>
-      </div>
     </div>
   </div>
 
@@ -406,8 +406,9 @@
     const weight   = parseFloat(document.getElementById('weight').value);
     const activity = getSelected('activityGroup');
     const goal     = getSelected('goalGroup');
+    const gender   = getSelected('genderGroup');
 
-    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal) {
+    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal || !gender) {
       return showError('Please fill in all fields.');
     }
 
@@ -421,7 +422,7 @@
       const res = await fetch('/api/profile/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ display_name: name, height_cm, weight_lbs: weight, activity_level: activity, goal }),
+        body: JSON.stringify({ display_name: name, height_cm, weight_lbs: weight, activity_level: activity, goal, gender }),
       });
       const data = await res.json();
       if (!res.ok) return showError(data.error || 'Failed to save profile.');
