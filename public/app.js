@@ -1084,10 +1084,7 @@ async function loadMeals() {
     if (headerName) headerName.textContent = name;
 
     loadDashboard();
-    // Re-render nutrition targets if the nutrition tab has been loaded
-    if (!document.getElementById('nutrition-targets').classList.contains('hidden')) {
-      loadMeals();
-    }
+    loadMeals();
   }
 
   // ── Chart helpers ──────────────────────────────────────────────────────────

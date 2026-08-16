@@ -151,6 +151,7 @@ async function initDb() {
       weight_lbs REAL NOT NULL,
       activity_level TEXT NOT NULL,
       goal TEXT NOT NULL,
+      gender TEXT NOT NULL DEFAULT 'male',
       daily_calories INTEGER NOT NULL,
       daily_protein INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
