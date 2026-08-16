@@ -265,7 +265,7 @@ const App = (() => {
   async function addSet() {
     if (!activeWorkoutId) return toast('No active workout', 'error');
     const exercise_id = document.getElementById('set-exercise').value;
-    const weight_kg   = parseFloat(document.getElementById('set-weight').value) || null;
+    const weight_kg   = parseFloat(document.getElementById('set-profile-weight').value) || null;
     const reps        = parseInt(document.getElementById('set-reps').value)     || null;
     if (!exercise_id) return toast('Select an exercise', 'error');
 
@@ -276,7 +276,7 @@ const App = (() => {
     await post(`/api/workouts/${activeWorkoutId}/sets`, { exercise_id, set_number, reps, weight_kg });
     toast('Set logged');
     loadActiveSets();
-    document.getElementById('set-weight').value = '';
+    document.getElementById('set-profile-weight').value = '';
     document.getElementById('set-reps').value   = '';
   }
 
@@ -979,7 +979,7 @@ async function loadMeals() {
     if (!profile) return;
 
     document.getElementById('set-name').value = profile.display_name || '';
-    document.getElementById('set-weight').value = profile.weight_lbs || '';
+    document.getElementById('set-profile-weight').value = profile.weight_lbs || '';
 
     // Height: convert cm back to ft + in
     if (profile.height_cm) {
@@ -989,6 +989,11 @@ async function loadMeals() {
       document.getElementById('set-height-ft').value = ft;
       document.getElementById('set-height-in').value = inch;
     }
+
+    // Gender toggle
+    document.querySelectorAll('#set-gender .settings-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === (profile.gender || 'male'));
+    });
 
     // Activity toggle
     document.querySelectorAll('#set-activity .settings-toggle').forEach(btn => {
@@ -1010,14 +1015,17 @@ async function loadMeals() {
   }
 
   function updateSettingsTargets() {
-    const weight   = parseFloat(document.getElementById('set-weight').value);
+    const weight   = parseFloat(document.getElementById('set-profile-weight').value);
     const activity = document.querySelector('#set-activity .settings-toggle.active')?.dataset.val;
     const goal     = document.querySelector('#set-goal .settings-toggle.active')?.dataset.val;
+    const gender   = document.querySelector('#set-gender .settings-toggle.active')?.dataset.val || 'male';
     const el       = document.getElementById('settings-targets');
 
     if (!weight || !activity || !goal) { el.classList.add('hidden'); return; }
 
-    const ACTIVITY  = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
+    const ACTIVITY  = gender === 'female'
+      ? { sedentary: 11, light: 12.5, moderate: 13.5, active: 15 }
+      : { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
     const CAL_RANGE = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
     const PR_RANGE  = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
     const tdee = weight * (ACTIVITY[activity] || 15.5);
@@ -1037,11 +1045,12 @@ async function loadMeals() {
     const name     = document.getElementById('set-name').value.trim();
     const ft       = parseFloat(document.getElementById('set-height-ft').value);
     const inch     = parseFloat(document.getElementById('set-height-in').value);
-    const weight   = parseFloat(document.getElementById('set-weight').value);
+    const weight   = parseFloat(document.getElementById('set-profile-weight').value);
     const activity = document.querySelector('#set-activity .settings-toggle.active')?.dataset.val;
     const goal     = document.querySelector('#set-goal .settings-toggle.active')?.dataset.val;
+    const gender   = document.querySelector('#set-gender .settings-toggle.active')?.dataset.val;
 
-    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal) {
+    if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal || !gender) {
       return toast('Please fill in all fields', 'error');
     }
 
@@ -1051,6 +1060,7 @@ async function loadMeals() {
       weight_lbs: weight,
       activity_level: activity,
       goal,
+      gender,
     });
 
     toast('Settings saved');
