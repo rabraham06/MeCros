@@ -265,7 +265,7 @@ const App = (() => {
   async function addSet() {
     if (!activeWorkoutId) return toast('No active workout', 'error');
     const exercise_id = document.getElementById('set-exercise').value;
-    const weight_kg   = parseFloat(document.getElementById('set-profile-weight').value) || null;
+    const weight_kg   = parseFloat(document.getElementById('set-weight').value) || null;
     const reps        = parseInt(document.getElementById('set-reps').value)     || null;
     if (!exercise_id) return toast('Select an exercise', 'error');
 
@@ -276,7 +276,7 @@ const App = (() => {
     await post(`/api/workouts/${activeWorkoutId}/sets`, { exercise_id, set_number, reps, weight_kg });
     toast('Set logged');
     loadActiveSets();
-    document.getElementById('set-profile-weight').value = '';
+    document.getElementById('set-weight').value = '';
     document.getElementById('set-reps').value   = '';
   }
 
