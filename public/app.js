@@ -1016,19 +1016,24 @@ async function loadMeals() {
 
   function updateSettingsTargets() {
     const weight   = parseFloat(document.getElementById('set-profile-weight').value);
+    const ft       = parseFloat(document.getElementById('set-height-ft').value) || 0;
+    const inch     = parseFloat(document.getElementById('set-height-in').value) || 0;
+    const height_cm = ((ft * 12) + inch) * 2.54;
     const activity = document.querySelector('#set-activity .settings-toggle.active')?.dataset.val;
     const goal     = document.querySelector('#set-goal .settings-toggle.active')?.dataset.val;
     const gender   = document.querySelector('#set-gender .settings-toggle.active')?.dataset.val || 'male';
     const el       = document.getElementById('settings-targets');
 
-    if (!weight || !activity || !goal) { el.classList.add('hidden'); return; }
+    if (!weight || !height_cm || !activity || !goal) { el.classList.add('hidden'); return; }
 
-    const ACTIVITY  = gender === 'female'
-      ? { sedentary: 11, light: 12.5, moderate: 13.5, active: 15 }
-      : { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
+    const ACTIVITY_MULTIPLIERS = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+    const weight_kg = weight / 2.2046;
+    const bmr = gender === 'female'
+      ? (10 * weight_kg) + (6.25 * height_cm) - 286
+      : (10 * weight_kg) + (6.25 * height_cm) - 120;
+    const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity] || 1.55);
     const CAL_RANGE = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
     const PR_RANGE  = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
-    const tdee = weight * (ACTIVITY[activity] || 15.5);
     const [cLo, cHi] = CAL_RANGE[goal]  || [0, 200];
     const [pLo, pHi] = PR_RANGE[goal]   || [0.8, 1.0];
     const calRange  = `${Math.round(tdee + cLo)}–${Math.round(tdee + cHi)}`;
@@ -1174,6 +1179,6 @@ async function loadMeals() {
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
-    loadSettings, saveSettings, settingsToggle,
+    loadSettings, saveSettings, settingsToggle, updateSettingsTargets,
   };
 })();

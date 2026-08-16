@@ -112,16 +112,17 @@ initDb().then(db => {
   app.use('/api', requireAuth);
 
   // ─── PROFILE ─────────────────────────────────────────────────────────────
-  const ACTIVITY_FACTORS = {
-    male:   { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 },
-    female: { sedentary: 11, light: 12.5, moderate: 13.5, active: 15 },
-  };
-  const GOAL_CAL_RANGE   = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
-  const GOAL_PROT_RANGE  = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
+  const ACTIVITY_MULTIPLIERS = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725 };
+  const GOAL_CAL_RANGE       = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
+  const GOAL_PROT_RANGE      = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
 
-  function calcRanges(weight_lbs, activity_level, goal, gender = 'male') {
-    const factors = ACTIVITY_FACTORS[gender] || ACTIVITY_FACTORS.male;
-    const tdee = weight_lbs * (factors[activity_level] || 15.5);
+  function calcRanges(weight_lbs, height_cm, activity_level, goal, gender = 'male') {
+    const weight_kg = weight_lbs / 2.2046;
+    // Mifflin-St Jeor BMR (age assumed 25)
+    const bmr = gender === 'female'
+      ? (10 * weight_kg) + (6.25 * height_cm) - 286
+      : (10 * weight_kg) + (6.25 * height_cm) - 120;
+    const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity_level] || 1.55);
     const [calLo, calHi] = GOAL_CAL_RANGE[goal]  || [0, 200];
     const [prLo,  prHi]  = GOAL_PROT_RANGE[goal] || [0.8, 1.0];
     return {
@@ -137,7 +138,7 @@ initDb().then(db => {
   app.get('/api/profile', (req, res) => {
     const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id=?').get(req.userId);
     if (!profile) return res.json(null);
-    res.json({ ...profile, ...calcRanges(profile.weight_lbs, profile.activity_level, profile.goal, profile.gender) });
+    res.json({ ...profile, ...calcRanges(profile.weight_lbs, profile.height_cm, profile.activity_level, profile.goal, profile.gender) });
   });
 
   app.post('/api/profile/setup', (req, res) => {
@@ -146,7 +147,7 @@ initDb().then(db => {
       return res.status(400).json({ error: 'All fields required' });
     }
     const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high } =
-      calcRanges(weight_lbs, activity_level, goal, gender);
+      calcRanges(weight_lbs, height_cm, activity_level, goal, gender);
     const existing = db.prepare('SELECT user_id FROM user_profiles WHERE user_id=?').get(req.userId);
     if (existing) {
       db.prepare(

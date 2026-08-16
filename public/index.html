@@ -264,14 +264,14 @@
         <div>
           <label class="field-label">Height</label>
           <div style="display:flex;gap:.5rem">
-            <select id="set-height-ft" class="input">
+            <select id="set-height-ft" class="input" onchange="App.updateSettingsTargets()">
               <option value="">ft</option>
               <option value="4">4 ft</option>
               <option value="5">5 ft</option>
               <option value="6">6 ft</option>
               <option value="7">7 ft</option>
             </select>
-            <select id="set-height-in" class="input">
+            <select id="set-height-in" class="input" onchange="App.updateSettingsTargets()">
               <option value="">in</option>
               <option value="0">0 in</option>
               <option value="1">1 in</option>
@@ -291,7 +291,7 @@
 
         <div>
           <label class="field-label" for="set-profile-weight">Weight (lbs)</label>
-          <input id="set-profile-weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" />
+          <input id="set-profile-weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" oninput="App.updateSettingsTargets()" />
         </div>
 
         <div style="grid-column: 1 / -1">
