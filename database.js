@@ -171,6 +171,7 @@ async function initDb() {
 
   // Migrations
   try { db.prepare('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1').run(); } catch {}
+  try { db.prepare("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'").run(); } catch {}
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
