@@ -303,12 +303,12 @@
         </div>
 
         <div>
-          <label class="field-label">Activity Level</label>
+          <label class="field-label">Activity Level <span style="font-size:.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(days/week)</span></label>
           <div class="settings-toggle-group" id="set-activity">
-            <button type="button" class="settings-toggle" data-val="sedentary" onclick="App.settingsToggle('set-activity',this)">Sedentary</button>
-            <button type="button" class="settings-toggle" data-val="light"     onclick="App.settingsToggle('set-activity',this)">Light</button>
-            <button type="button" class="settings-toggle" data-val="moderate"  onclick="App.settingsToggle('set-activity',this)">Moderate</button>
-            <button type="button" class="settings-toggle" data-val="active"    onclick="App.settingsToggle('set-activity',this)">Very Active</button>
+            <button type="button" class="settings-toggle" data-val="sedentary" onclick="App.settingsToggle('set-activity',this)">Sedentary <span class="settings-toggle__days">0 days</span></button>
+            <button type="button" class="settings-toggle" data-val="light"     onclick="App.settingsToggle('set-activity',this)">Light <span class="settings-toggle__days">1–2 days</span></button>
+            <button type="button" class="settings-toggle" data-val="moderate"  onclick="App.settingsToggle('set-activity',this)">Moderate <span class="settings-toggle__days">3–4 days</span></button>
+            <button type="button" class="settings-toggle" data-val="active"    onclick="App.settingsToggle('set-activity',this)">Very Active <span class="settings-toggle__days">5+ days</span></button>
           </div>
         </div>
 
