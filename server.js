@@ -112,12 +112,16 @@ initDb().then(db => {
   app.use('/api', requireAuth);
 
   // ─── PROFILE ─────────────────────────────────────────────────────────────
-  const ACTIVITY_FACTORS = { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 };
+  const ACTIVITY_FACTORS = {
+    male:   { sedentary: 13, light: 14.5, moderate: 15.5, active: 17 },
+    female: { sedentary: 11, light: 12.5, moderate: 13.5, active: 15 },
+  };
   const GOAL_CAL_RANGE   = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
   const GOAL_PROT_RANGE  = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
 
-  function calcRanges(weight_lbs, activity_level, goal) {
-    const tdee = weight_lbs * (ACTIVITY_FACTORS[activity_level] || 15.5);
+  function calcRanges(weight_lbs, activity_level, goal, gender = 'male') {
+    const factors = ACTIVITY_FACTORS[gender] || ACTIVITY_FACTORS.male;
+    const tdee = weight_lbs * (factors[activity_level] || 15.5);
     const [calLo, calHi] = GOAL_CAL_RANGE[goal]  || [0, 200];
     const [prLo,  prHi]  = GOAL_PROT_RANGE[goal] || [0.8, 1.0];
     return {
@@ -133,25 +137,25 @@ initDb().then(db => {
   app.get('/api/profile', (req, res) => {
     const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id=?').get(req.userId);
     if (!profile) return res.json(null);
-    res.json({ ...profile, ...calcRanges(profile.weight_lbs, profile.activity_level, profile.goal) });
+    res.json({ ...profile, ...calcRanges(profile.weight_lbs, profile.activity_level, profile.goal, profile.gender) });
   });
 
   app.post('/api/profile/setup', (req, res) => {
-    const { display_name, height_cm, weight_lbs, activity_level, goal } = req.body;
-    if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal) {
+    const { display_name, height_cm, weight_lbs, activity_level, goal, gender } = req.body;
+    if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal || !gender) {
       return res.status(400).json({ error: 'All fields required' });
     }
     const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high } =
-      calcRanges(weight_lbs, activity_level, goal);
+      calcRanges(weight_lbs, activity_level, goal, gender);
     const existing = db.prepare('SELECT user_id FROM user_profiles WHERE user_id=?').get(req.userId);
     if (existing) {
       db.prepare(
-        'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, daily_calories=?, daily_protein=? WHERE user_id=?'
-      ).run(display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein, req.userId);
+        'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, gender=?, daily_calories=?, daily_protein=? WHERE user_id=?'
+      ).run(display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein, req.userId);
     } else {
       db.prepare(
-        'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein);
+        'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein);
     }
     res.json({ daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high });
   });
