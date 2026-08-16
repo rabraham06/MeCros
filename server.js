@@ -142,21 +142,34 @@ initDb().then(db => {
   });
 
   app.post('/api/profile/setup', (req, res) => {
-    const { display_name, height_cm, weight_lbs, activity_level, goal, gender } = req.body;
-    if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal || !gender) {
+    const { display_name, height_cm, weight_lbs, activity_level, goal, gender = 'male' } = req.body;
+    if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal) {
       return res.status(400).json({ error: 'All fields required' });
     }
     const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high } =
       calcRanges(weight_lbs, height_cm, activity_level, goal, gender);
     const existing = db.prepare('SELECT user_id FROM user_profiles WHERE user_id=?').get(req.userId);
-    if (existing) {
-      db.prepare(
-        'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, gender=?, daily_calories=?, daily_protein=? WHERE user_id=?'
-      ).run(display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein, req.userId);
-    } else {
-      db.prepare(
-        'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein);
+    try {
+      if (existing) {
+        db.prepare(
+          'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, gender=?, daily_calories=?, daily_protein=? WHERE user_id=?'
+        ).run(display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein, req.userId);
+      } else {
+        db.prepare(
+          'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein);
+      }
+    } catch {
+      // gender column may not exist on older DBs — fall back without it
+      if (existing) {
+        db.prepare(
+          'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, daily_calories=?, daily_protein=? WHERE user_id=?'
+        ).run(display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein, req.userId);
+      } else {
+        db.prepare(
+          'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein);
+      }
     }
     res.json({ daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high });
   });
