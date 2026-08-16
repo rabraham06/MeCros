@@ -1059,14 +1059,18 @@ async function loadMeals() {
       return toast('Please fill in all fields', 'error');
     }
 
-    await post('/api/profile/setup', {
-      display_name: name,
-      height_cm: ((ft * 12) + inch) * 2.54,
-      weight_lbs: weight,
-      activity_level: activity,
-      goal,
-      gender,
-    });
+    try {
+      await post('/api/profile/setup', {
+        display_name: name,
+        height_cm: ((ft * 12) + inch) * 2.54,
+        weight_lbs: weight,
+        activity_level: activity,
+        goal,
+        gender,
+      });
+    } catch (err) {
+      return toast(err.message || 'Failed to save settings', 'error');
+    }
 
     toast('Settings saved');
 
