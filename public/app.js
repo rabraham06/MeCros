@@ -460,10 +460,10 @@ async function loadMeals() {
     }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
     document.getElementById('nutrition-summary').innerHTML = `
-      <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value">${totals.calories.toFixed(0)}</div></div>
-      <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value stat-value--green">${totals.protein.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Carbs</div><div class="stat-value stat-value--yellow">${totals.carbs.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--red">${totals.fat.toFixed(1)}g</div></div>`;
+      <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value stat-value--cal">${totals.calories.toFixed(0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value stat-value--prot">${totals.protein.toFixed(1)}g</div></div>
+      <div class="stat-card"><div class="stat-label">Carbs</div><div class="stat-value stat-value--carb">${totals.carbs.toFixed(1)}g</div></div>
+      <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--fat">${totals.fat.toFixed(1)}g</div></div>`;
 
     const targetsEl = document.getElementById('nutrition-targets');
     if (currentProfile?.cal_low) {
@@ -481,7 +481,7 @@ async function loadMeals() {
           </div>
           <div class="nt-row">
             <span class="nt-name">Protein</span>
-            <div class="nt-bar-wrap"><div class="nt-bar nt-bar--green" style="width:${protPct}%"></div></div>
+            <div class="nt-bar-wrap"><div class="nt-bar nt-bar--prot" style="width:${protPct}%"></div></div>
             <span class="nt-range">${totals.protein.toFixed(1)}g / ${p.prot_low}–${p.prot_high}g</span>
           </div>
         </div>`;
