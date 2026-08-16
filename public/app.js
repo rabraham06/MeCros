@@ -125,7 +125,7 @@ const App = (() => {
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   async function loadDashboard() {
-    const [d, profile] = await Promise.all([get('/api/dashboard'), get('/api/profile')]);
+    const [d, profile] = await Promise.all([get('/api/dashboard'), Promise.resolve(currentProfile || get('/api/profile'))]);
     document.getElementById('dash-workouts').textContent = d.totalWorkouts;
     document.getElementById('dash-prs').textContent      = d.prCount;
     document.getElementById('dash-last').textContent     = d.lastWorkout
