@@ -101,6 +101,7 @@ const App = (() => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        document.body.dataset.tab = btn.dataset.tab;
         const loaders = {
           dashboard: loadDashboard,
           workout:   loadWorkouts,
@@ -1136,26 +1137,21 @@ async function loadMeals() {
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
+  function dismissLoader() {
+    const el = document.getElementById('loading-screen');
+    if (el) el.classList.add('hidden');
+  }
+
   async function init() {
     // Redirect to login if no token (synchronous — no flash)
     if (!token()) { location.replace('/login.html'); return; }
 
-    // Returning users: show immediately using cached username so there's no blank delay.
-    // New/unknown sessions: stay hidden until the server confirms the token is valid.
     const cachedUsername = sessionStorage.getItem('mecros_username');
-    if (cachedUsername) {
-      document.body.style.visibility = 'visible';
-    }
 
     // Validate token server-side. On 401, api() redirects to login and returns undefined.
     const profile = await get('/api/profile');
     if (profile === undefined) return;
     currentProfile = profile;
-
-    // First-time load path — token valid but no cached username yet
-    if (!cachedUsername) {
-      document.body.style.visibility = 'visible';
-    }
 
     // Show display name from profile (fallback to username)
     const displayName = profile?.display_name || cachedUsername || 'User';
@@ -1175,7 +1171,8 @@ async function loadMeals() {
 
     initNav();
     document.getElementById('meal-date').value = localDateStr();
-    loadDashboard();
+    await loadDashboard();
+    dismissLoader();
 
     // Close workout detail modal on backdrop click
     document.getElementById('workout-modal').addEventListener('click', function(e) {
