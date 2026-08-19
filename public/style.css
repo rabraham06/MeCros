@@ -697,6 +697,42 @@ canvas { max-width: 100%; display: block; }
   .meal-card__actions { gap: .25rem; }
 }
 
+/* ── Loading screen ─────────────────────────────────────────────────────────── */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  z-index: 9999;
+  transition: opacity 400ms ease, visibility 400ms ease;
+}
+#loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loading-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+.loading-logo span { color: var(--accent); }
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── Side decorative pattern ────────────────────────────────────────────────── */
 .side-pattern {
   position: fixed;
