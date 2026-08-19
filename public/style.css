@@ -512,6 +512,13 @@ textarea.input { resize: vertical; line-height: 1.5; }
   color: var(--text);
   font-weight: 600;
 }
+.settings-toggle__days {
+  font-size: .7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: .25rem;
+}
+.settings-toggle.active .settings-toggle__days { color: inherit; opacity: .75; }
 
 .settings-targets {
   margin-top: 1rem;
@@ -689,3 +696,41 @@ canvas { max-width: 100%; display: block; }
   .pr-grid { grid-template-columns: repeat(2, 1fr); }
   .meal-card__actions { gap: .25rem; }
 }
+
+/* ── Side decorative pattern ────────────────────────────────────────────────── */
+.side-pattern {
+  position: fixed;
+  top: 0;
+  width: 145px;
+  height: 100vh;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  transition: opacity 300ms;
+}
+.side-pattern--left  { left: 0; }
+.side-pattern--right { right: 0; }
+
+body[data-tab="settings"] .side-pattern { opacity: 0; }
+
+.side-pattern span {
+  position: absolute;
+  width:  var(--s, 60px);
+  height: var(--s, 60px);
+  left:   var(--x, 0);
+  top:    var(--y, 0);
+  border-radius: 10px;
+}
+
+/* 4 purple shades — dark → medium → light → mid, cycling */
+.side-pattern span:nth-child(4n+1) { background: rgba(29,  10,  77,  0.95); }
+.side-pattern span:nth-child(4n+2) { background: rgba(108, 99,  255, 0.88); }
+.side-pattern span:nth-child(4n+3) { background: rgba(167, 139, 250, 0.75); }
+.side-pattern span:nth-child(4n+4) { background: rgba(76,  29,  149, 0.90); }
+
+.side-pattern--right span {
+  left: auto;
+  right: var(--x, 0);
+}
+
+@media (max-width: 1050px) { .side-pattern { display: none; } }
