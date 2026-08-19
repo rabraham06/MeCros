@@ -669,7 +669,7 @@ textarea.input { resize: vertical; line-height: 1.5; }
   font-family: 'Courier New', Courier, monospace;
   font-size: .7rem;
   letter-spacing: .12em;
-  color: #4a5280;
+  color: #fdfdfd;
   pointer-events: none;
   z-index: 50;
 }
