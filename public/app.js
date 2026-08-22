@@ -55,7 +55,7 @@ const App = (() => {
   }
 
   function localDateStr(date = new Date()) {
-    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+    return date.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   }
 
   function fmtDate(iso) {
