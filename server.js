@@ -62,6 +62,10 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+function estDateStr() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
 const db = initDb();
 {
 
@@ -200,8 +204,8 @@ const db = initDb();
       FROM meals m
       JOIN meal_foods mf ON mf.meal_id = m.id
       JOIN foods f ON f.id = mf.food_id
-      WHERE m.user_id=? AND substr(m.logged_at,1,10)=substr(datetime('now','localtime'),1,10)
-    `).get(req.userId);
+      WHERE m.user_id=? AND substr(m.logged_at,1,10)=?
+    `).get(req.userId, estDateStr());
 
     res.json({ totalWorkouts, lastWorkout, prCount, latestWeight, todayMacros });
   });
@@ -422,7 +426,7 @@ qty defaults to 1 if not a repeated item.`,
   // ─── MEALS ────────────────────────────────────────────────────────────────
   app.get('/api/meals', (req, res) => {
     const { date } = req.query;
-    const d = date || new Date().toISOString().slice(0, 10);
+    const d = date || estDateStr();
 const meals = db.prepare(
       "SELECT * FROM meals WHERE user_id=? AND substr(logged_at,1,10)=? ORDER BY logged_at ASC"
     ).all(req.userId, d);
