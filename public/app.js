@@ -389,6 +389,13 @@ const App = (() => {
           <span class="tag tag--equip">${esc(e.equipment)}</span>
         </div>
         ${e.instructions ? `<p class="exercise-card__instructions">${esc(e.instructions)}</p>` : ''}`;
+      if (e.user_id) {
+        const delBtn = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteExercise(e.id));
+        delBtn.setAttribute('aria-label', 'Delete exercise');
+        delBtn.style.cssText = 'position:absolute;top:.5rem;right:.5rem';
+        div.style.position = 'relative';
+        div.appendChild(delBtn);
+      }
       el.appendChild(div);
     });
   }
@@ -400,6 +407,13 @@ const App = (() => {
     document.getElementById('ex-name').focus();
   }
   function hideAddExercise() { document.getElementById('add-exercise-form').classList.add('hidden'); }
+
+  async function deleteExercise(id) {
+    if (!await confirmDialog('Delete this exercise?')) return;
+    await del(`/api/exercises/${id}`);
+    toast('Exercise deleted');
+    loadExercises();
+  }
 
   async function addExercise() {
     const name = document.getElementById('ex-name').value.trim();
@@ -1123,7 +1137,7 @@ async function loadMeals() {
   return {
     logout,
     startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout, closeModal,
-    loadExercises, showAddExercise, hideAddExercise, addExercise,
+    loadExercises, showAddExercise, hideAddExercise, addExercise, deleteExercise,
     loadPRs,
     loadMeals, showAddMeal, hideAddMeal, addMeal, deleteMeal,
     startEditMeal, saveMealName,
