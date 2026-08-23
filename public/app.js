@@ -108,7 +108,6 @@ const App = (() => {
           exercises: loadExercises,
           records:   loadPRs,
           nutrition: loadMeals,
-          goals:     loadGoals,
           settings:  loadSettings,
         };
         loaders[btn.dataset.tab]?.();
@@ -899,80 +898,6 @@ async function loadMeals() {
     loadMeals();
   }
 
-  // ── Goals ──────────────────────────────────────────────────────────────────
-  async function loadGoals() {
-    const goals = await get('/api/goals');
-    const el = document.getElementById('goal-list');
-    el.innerHTML = '';
-
-    if (!goals.length) {
-      el.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">🎯</div>
-          <p class="empty-state__text">No goals set yet.</p>
-          <button type="button" class="btn btn--primary" onclick="App.showAddGoal()">Add your first goal</button>
-        </div>`;
-      return;
-    }
-
-    goals.forEach(g => {
-      const div = document.createElement('div');
-      div.className = 'goal-card';
-
-      const check = document.createElement('div');
-      check.className = 'goal-card__check' + (g.achieved ? ' goal-card__check--done' : '');
-      check.setAttribute('role', 'checkbox');
-      check.setAttribute('aria-checked', g.achieved ? 'true' : 'false');
-      check.setAttribute('tabindex', '0');
-      check.textContent = g.achieved ? '✓' : '';
-      check.addEventListener('click', () => toggleGoal(g.id, g.achieved));
-      check.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') toggleGoal(g.id, g.achieved); });
-
-      const info = document.createElement('div');
-      info.className = 'goal-card__info';
-      info.innerHTML = `
-        <div class="goal-card__type">${esc(g.type.replace(/_/g, ' '))}</div>
-        <div class="goal-card__target${g.achieved ? ' goal-card__target--done' : ''}">${esc(String(g.target_value))} ${esc(g.unit)}</div>
-        ${g.deadline ? `<div class="goal-card__deadline">By ${fmtDate(g.deadline)}</div>` : ''}`;
-
-      const delBtn = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteGoal(g.id));
-      delBtn.setAttribute('aria-label', 'Delete goal');
-
-      div.appendChild(check);
-      div.appendChild(info);
-      div.appendChild(delBtn);
-      el.appendChild(div);
-    });
-  }
-
-  function showAddGoal() { document.getElementById('add-goal-form').classList.remove('hidden'); }
-  function hideAddGoal() { document.getElementById('add-goal-form').classList.add('hidden'); }
-
-  async function addGoal() {
-    const target = parseFloat(document.getElementById('goal-target').value);
-    if (!target) return toast('Enter a target value', 'error');
-    await post('/api/goals', {
-      type:         document.getElementById('goal-type').value,
-      target_value: target,
-      unit:         document.getElementById('goal-unit').value || 'units',
-      deadline:     document.getElementById('goal-deadline').value || null,
-    });
-    toast('Goal saved');
-    hideAddGoal();
-    loadGoals();
-  }
-
-  async function toggleGoal(id, current) {
-    await patch(`/api/goals/${id}`, { achieved: !current });
-    loadGoals();
-  }
-
-  async function deleteGoal(id) {
-    if (!await confirmDialog('Remove this goal?')) return;
-    await del(`/api/goals/${id}`);
-    toast('Goal removed');
-    loadGoals();
-  }
 
   // ── Settings ───────────────────────────────────────────────────────────────
   async function loadSettings() {
@@ -1201,7 +1126,6 @@ async function loadMeals() {
     searchFoods, addFoodToMeal, incrementMealFood, decrementMealFood, deleteMealFood,
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
-    showAddGoal, hideAddGoal, addGoal, toggleGoal, deleteGoal,
     loadSettings, saveSettings, settingsToggle, updateSettingsTargets,
   };
 })();

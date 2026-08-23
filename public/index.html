@@ -18,7 +18,6 @@
     <button type="button" class="nav-btn" data-tab="exercises">Exercises</button>
     <button type="button" class="nav-btn" data-tab="records">PRs</button>
     <button type="button" class="nav-btn" data-tab="nutrition">Nutrition</button>
-    <button type="button" class="nav-btn" data-tab="goals">Goals</button>
     <button type="button" class="nav-btn hidden" data-tab="settings">Settings</button>
   </nav>
 </header>
@@ -216,35 +215,6 @@
     </div>
   </section>
 
-  <!-- ── GOALS ─────────────────────────────────────────────────────── -->
-  <section id="tab-goals" class="tab">
-    <div class="tab-header">
-      <h1>Goals</h1>
-      <button type="button" class="btn btn--primary" onclick="App.showAddGoal()">+ Add Goal</button>
-    </div>
-    <div id="goal-list"></div>
-
-    <div id="add-goal-form" class="card hidden" style="margin-top:1rem">
-      <h2>Add Goal</h2>
-      <div class="form-grid">
-        <select id="goal-type" class="input" aria-label="Goal type">
-          <option value="weight_loss">Weight Loss (lbs)</option>
-          <option value="muscle_gain">Muscle Gain (lbs)</option>
-          <option value="strength">Strength PR (lbs)</option>
-          <option value="calories">Daily Calories (cal)</option>
-          <option value="protein">Daily Protein (g)</option>
-          <option value="workouts_per_week">Workouts/Week</option>
-        </select>
-        <input id="goal-target" type="number" class="input" placeholder="Target value" aria-label="Target value" />
-        <input id="goal-unit"   class="input" placeholder="Unit (lbs, g, kcal…)" aria-label="Unit" />
-        <input id="goal-deadline" type="date" class="input" aria-label="Deadline" />
-      </div>
-      <div class="form-row" style="margin-top:.75rem">
-        <button type="button" class="btn btn--primary" onclick="App.addGoal()">Save Goal</button>
-        <button type="button" class="btn" onclick="App.hideAddGoal()">Cancel</button>
-      </div>
-    </div>
-  </section>
 
   <!-- ── SETTINGS ──────────────────────────────────────────────────── -->
   <section id="tab-settings" class="tab">
