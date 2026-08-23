@@ -251,6 +251,7 @@ const db = initDb();
   });
 
   app.delete('/api/workouts/:id', (req, res) => {
+    db.prepare('DELETE FROM personal_records WHERE workout_id=? AND user_id=?').run(req.params.id, req.userId);
     db.prepare('DELETE FROM workout_sets WHERE workout_id=?').run(req.params.id);
     db.prepare('DELETE FROM workouts WHERE id=? AND user_id=?').run(req.params.id, req.userId);
     res.json({ ok: true });
