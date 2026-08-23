@@ -393,7 +393,12 @@ const App = (() => {
     });
   }
 
-  function showAddExercise() { document.getElementById('add-exercise-form').classList.remove('hidden'); }
+  function showAddExercise() {
+    const form = document.getElementById('add-exercise-form');
+    form.classList.remove('hidden');
+    setTimeout(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    document.getElementById('ex-name').focus();
+  }
   function hideAddExercise() { document.getElementById('add-exercise-form').classList.add('hidden'); }
 
   async function addExercise() {
