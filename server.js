@@ -191,7 +191,12 @@ const db = initDb();
     const lastWorkout = db.prepare(
       'SELECT name, started_at FROM workouts WHERE user_id=? ORDER BY started_at DESC LIMIT 1'
     ).get(req.userId);
-    const prCount = db.prepare('SELECT COUNT(DISTINCT exercise_id) as c FROM personal_records WHERE user_id=?').get(req.userId).c;
+    const prCount = db.prepare(`
+      SELECT COUNT(DISTINCT ws.exercise_id) as c
+      FROM workout_sets ws
+      JOIN workouts w ON w.id = ws.workout_id
+      WHERE w.user_id=? AND ws.weight_kg IS NOT NULL
+    `).get(req.userId).c;
     const latestWeight = db.prepare(
       'SELECT weight_kg, logged_at FROM body_weight WHERE user_id=? ORDER BY logged_at DESC LIMIT 1'
     ).get(req.userId);
@@ -251,9 +256,9 @@ const db = initDb();
   });
 
   app.delete('/api/workouts/:id', (req, res) => {
-    db.prepare('DELETE FROM personal_records WHERE workout_id=? AND user_id=?').run(req.params.id, req.userId);
-    db.prepare('DELETE FROM workout_sets WHERE workout_id=?').run(req.params.id);
-    db.prepare('DELETE FROM workouts WHERE id=? AND user_id=?').run(req.params.id, req.userId);
+    const workoutId = req.params.id;
+    db.prepare('DELETE FROM workout_sets WHERE workout_id=?').run(workoutId);
+    db.prepare('DELETE FROM workouts WHERE id=? AND user_id=?').run(workoutId, req.userId);
     res.json({ ok: true });
   });
 
@@ -307,12 +312,15 @@ const db = initDb();
 
   app.get('/api/records/bests', (req, res) => {
     res.json(db.prepare(`
-      SELECT pr.exercise_id, e.name as exercise_name, e.muscle_group,
-        MAX(pr.weight_kg) as best_weight, pr.reps, pr.achieved_at
-      FROM personal_records pr
-      JOIN exercises e ON e.id = pr.exercise_id
-      WHERE pr.user_id=?
-      GROUP BY pr.exercise_id
+      SELECT ws.exercise_id, e.name as exercise_name, e.muscle_group,
+        MAX(ws.weight_kg) as best_weight,
+        ws.reps,
+        w.started_at as achieved_at
+      FROM workout_sets ws
+      JOIN exercises e ON e.id = ws.exercise_id
+      JOIN workouts w ON w.id = ws.workout_id
+      WHERE w.user_id=? AND ws.weight_kg IS NOT NULL
+      GROUP BY ws.exercise_id
       ORDER BY e.name
     `).all(req.userId));
   });
