@@ -191,7 +191,7 @@ const db = initDb();
     const lastWorkout = db.prepare(
       'SELECT name, started_at FROM workouts WHERE user_id=? ORDER BY started_at DESC LIMIT 1'
     ).get(req.userId);
-    const prCount = db.prepare('SELECT COUNT(*) as c FROM personal_records WHERE user_id=?').get(req.userId).c;
+    const prCount = db.prepare('SELECT COUNT(DISTINCT exercise_id) as c FROM personal_records WHERE user_id=?').get(req.userId).c;
     const latestWeight = db.prepare(
       'SELECT weight_kg, logged_at FROM body_weight WHERE user_id=? ORDER BY logged_at DESC LIMIT 1'
     ).get(req.userId);
