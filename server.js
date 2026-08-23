@@ -234,6 +234,14 @@ const db = initDb();
     res.json(db.prepare('SELECT * FROM exercises WHERE id=?').get(r.lastInsertRowid));
   });
 
+  app.delete('/api/exercises/:id', (req, res) => {
+    const ex = db.prepare('SELECT user_id FROM exercises WHERE id=?').get(req.params.id);
+    if (!ex) return res.status(404).json({ error: 'Not found' });
+    if (ex.user_id !== req.userId) return res.status(403).json({ error: 'Cannot delete a built-in exercise' });
+    db.prepare('DELETE FROM exercises WHERE id=?').run(req.params.id);
+    res.json({ ok: true });
+  });
+
   // ─── WORKOUTS ─────────────────────────────────────────────────────────────
   app.get('/api/workouts', (req, res) => {
     res.json(db.prepare(
