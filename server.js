@@ -218,8 +218,8 @@ const db = initDb();
   // ─── EXERCISES ────────────────────────────────────────────────────────────
   app.get('/api/exercises', (req, res) => {
     const { category, muscle } = req.query;
-    let sql = 'SELECT * FROM exercises WHERE 1=1';
-    const params = [];
+    let sql = 'SELECT * FROM exercises WHERE (user_id IS NULL OR user_id=?)';
+    const params = [req.userId];
     if (category) { sql += ' AND category=?'; params.push(category); }
     if (muscle) { sql += ' AND muscle_group=?'; params.push(muscle); }
     sql += ' ORDER BY name';
@@ -229,8 +229,8 @@ const db = initDb();
   app.post('/api/exercises', (req, res) => {
     const { name, category, muscle_group, equipment, instructions } = req.body;
     const r = db.prepare(
-      'INSERT INTO exercises (name, category, muscle_group, equipment, instructions) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, category, muscle_group, equipment || 'Bodyweight', instructions || '');
+      'INSERT INTO exercises (name, category, muscle_group, equipment, instructions, user_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(name, category, muscle_group, equipment || 'Bodyweight', instructions || '', req.userId);
     res.json(db.prepare('SELECT * FROM exercises WHERE id=?').get(r.lastInsertRowid));
   });
 
