@@ -597,7 +597,7 @@ async function loadMeals() {
           macroSpan.className = 'food-row__macros';
           const cal  = (f.amount_g * f.calories_per_100g / 100).toFixed(0);
           const prot = (f.amount_g * f.protein_per_100g  / 100).toFixed(1);
-          macroSpan.textContent = `${f.serving_g}g · ${cal} cal · ${prot}g P`;
+          macroSpan.textContent = `${cal} cal · ${prot}g P`;
 
           const rowActions = document.createElement('div');
           rowActions.className = 'food-row__actions';
