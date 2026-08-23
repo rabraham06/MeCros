@@ -325,6 +325,17 @@ const App = (() => {
     loadWorkouts();
   }
 
+  async function cancelWorkout() {
+    if (!activeWorkoutId) return;
+    if (!await confirmDialog('Cancel this workout? All sets will be lost.')) return;
+    await del(`/api/workouts/${activeWorkoutId}`);
+    activeWorkoutId = null;
+    document.getElementById('active-workout').classList.add('hidden');
+    document.getElementById('set-list').innerHTML = '';
+    toast('Workout cancelled');
+    loadWorkouts();
+  }
+
   async function deleteWorkout(id) {
     if (!await confirmDialog('This workout and all its sets will be permanently deleted.')) return;
     await del(`/api/workouts/${id}`);
@@ -1136,7 +1147,7 @@ async function loadMeals() {
 
   return {
     logout,
-    startWorkout, addSet, deleteSet, finishWorkout, deleteWorkout, closeModal,
+    startWorkout, addSet, deleteSet, finishWorkout, cancelWorkout, deleteWorkout, closeModal,
     loadExercises, showAddExercise, hideAddExercise, addExercise, deleteExercise,
     loadPRs,
     loadMeals, showAddMeal, hideAddMeal, addMeal, deleteMeal,

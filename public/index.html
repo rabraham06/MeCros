@@ -82,7 +82,10 @@
     <div id="active-workout" class="card hidden">
       <div class="tab-header">
         <h2 id="active-name">Current Workout</h2>
-        <button type="button" class="btn btn--success" onclick="App.finishWorkout()">Finish Workout</button>
+        <div style="display:flex;gap:.5rem">
+          <button type="button" class="btn btn--danger" onclick="App.cancelWorkout()">Cancel</button>
+          <button type="button" class="btn btn--success" onclick="App.finishWorkout()">Finish Workout</button>
+        </div>
       </div>
       <div class="set-logger">
         <select id="set-exercise" class="input set-logger__exercise" aria-label="Select exercise"></select>
