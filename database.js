@@ -27,11 +27,12 @@ function initDb() {
 
     CREATE TABLE IF NOT EXISTS exercises (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
       category TEXT NOT NULL,
       muscle_group TEXT NOT NULL,
       equipment TEXT NOT NULL DEFAULT 'Barbell',
-      instructions TEXT
+      instructions TEXT,
+      user_id INTEGER REFERENCES users(id)
     );
 
     CREATE TABLE IF NOT EXISTS workouts (
@@ -126,6 +127,7 @@ function initDb() {
   // Migrations
   try { db.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); } catch {}
   try { db.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); } catch {}
+  try { db.exec('ALTER TABLE exercises ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch {}
 
   // Seed exercise library
   const exCount = db.prepare('SELECT COUNT(*) as c FROM exercises').get();
