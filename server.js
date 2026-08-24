@@ -127,6 +127,7 @@ const db = initDb();
   const GOAL_CAL_RANGE       = { bulking: [300, 500], lean_bulking: [100, 250], cutting: [-600, -350] };
   const GOAL_PROT_RANGE      = { bulking: [0.7, 0.9], lean_bulking: [0.9, 1.1], cutting: [1.0, 1.3] };
 
+  // Fiber: 14g per 1000 kcal is the general guideline; scale by goal calories
   function calcRanges(weight_lbs, height_cm, activity_level, goal, gender = 'male') {
     const weight_kg = weight_lbs / 2.2046;
     // Mifflin-St Jeor BMR (age assumed 25)
@@ -136,13 +137,16 @@ const db = initDb();
     const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity_level] || 1.55);
     const [calLo, calHi] = GOAL_CAL_RANGE[goal]  || [0, 200];
     const [prLo,  prHi]  = GOAL_PROT_RANGE[goal] || [0.8, 1.0];
+    const targetCal = tdee + (calLo + calHi) / 2;
     return {
-      daily_calories: Math.round(tdee + (calLo + calHi) / 2),
+      daily_calories: Math.round(targetCal),
       daily_protein:  Math.round(weight_lbs * (prLo + prHi) / 2),
       cal_low:   Math.round(tdee + calLo),
       cal_high:  Math.round(tdee + calHi),
       prot_low:  Math.round(weight_lbs * prLo),
       prot_high: Math.round(weight_lbs * prHi),
+      fiber_low:  Math.round(targetCal / 1000 * 12),
+      fiber_high: Math.round(targetCal / 1000 * 16),
     };
   }
 
@@ -157,32 +161,19 @@ const db = initDb();
     if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal) {
       return res.status(400).json({ error: 'All fields required' });
     }
-    const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high } =
+    const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high, fiber_low, fiber_high } =
       calcRanges(weight_lbs, height_cm, activity_level, goal, gender);
     const existing = db.prepare('SELECT user_id FROM user_profiles WHERE user_id=?').get(req.userId);
-    try {
-      if (existing) {
-        db.prepare(
-          'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, gender=?, daily_calories=?, daily_protein=? WHERE user_id=?'
-        ).run(display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein, req.userId);
-      } else {
-        db.prepare(
-          'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein);
-      }
-    } catch {
-      // gender column may not exist on older DBs — fall back without it
-      if (existing) {
-        db.prepare(
-          'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, daily_calories=?, daily_protein=? WHERE user_id=?'
-        ).run(display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein, req.userId);
-      } else {
-        db.prepare(
-          'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, daily_calories, daily_protein);
-      }
+    if (existing) {
+      db.prepare(
+        'UPDATE user_profiles SET display_name=?, height_cm=?, weight_lbs=?, activity_level=?, goal=?, gender=?, daily_calories=?, daily_protein=? WHERE user_id=?'
+      ).run(display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein, req.userId);
+    } else {
+      db.prepare(
+        'INSERT INTO user_profiles (user_id, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(req.userId, display_name, height_cm, weight_lbs, activity_level, goal, gender, daily_calories, daily_protein);
     }
-    res.json({ daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high });
+    res.json({ daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high, fiber_low, fiber_high });
   });
 
   // ─── DASHBOARD ───────────────────────────────────────────────────────────
@@ -205,7 +196,8 @@ const db = initDb();
         ROUND(SUM(mf.amount_g * f.calories_per_100g / 100), 1) as calories,
         ROUND(SUM(mf.amount_g * f.protein_per_100g / 100), 1) as protein,
         ROUND(SUM(mf.amount_g * f.carbs_per_100g / 100), 1) as carbs,
-        ROUND(SUM(mf.amount_g * f.fat_per_100g / 100), 1) as fat
+        ROUND(SUM(mf.amount_g * f.fat_per_100g / 100), 1) as fat,
+        ROUND(SUM(mf.amount_g * f.fiber_per_100g / 100), 1) as fiber
       FROM meals m
       JOIN meal_foods mf ON mf.meal_id = m.id
       JOIN foods f ON f.id = mf.food_id
@@ -454,7 +446,7 @@ const meals = db.prepare(
                SUM(mf.qty) as qty,
                SUM(mf.amount_g) as amount_g,
                ROUND(SUM(mf.amount_g) / SUM(mf.qty)) as serving_g,
-               f.name, f.calories_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g
+               f.name, f.calories_per_100g, f.protein_per_100g, f.carbs_per_100g, f.fat_per_100g, f.fiber_per_100g
         FROM meal_foods mf JOIN foods f ON f.id=mf.food_id
         WHERE mf.meal_id=?
         GROUP BY mf.food_id
@@ -465,7 +457,8 @@ const meals = db.prepare(
         protein: acc.protein + (f.amount_g * f.protein_per_100g / 100),
         carbs: acc.carbs + (f.amount_g * f.carbs_per_100g / 100),
         fat: acc.fat + (f.amount_g * f.fat_per_100g / 100),
-      }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        fiber: acc.fiber + (f.amount_g * (f.fiber_per_100g || 0) / 100),
+      }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
       return { ...m, foods, macros };
     });
     res.json(result);
