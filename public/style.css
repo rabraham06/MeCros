@@ -150,6 +150,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .stat-value--prot   { color: var(--prot); }
 .stat-value--carb   { color: var(--carb); }
 .stat-value--fat    { color: var(--fat); }
+.stat-value--fiber  { color: #4ade80; }
 
 /* ── Macro bars ────────────────────────────────────────────────────────────── */
 .macro-targets {
