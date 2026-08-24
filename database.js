@@ -77,7 +77,8 @@ function initDb() {
       calories_per_100g REAL NOT NULL,
       protein_per_100g REAL NOT NULL,
       carbs_per_100g REAL NOT NULL,
-      fat_per_100g REAL NOT NULL
+      fat_per_100g REAL NOT NULL,
+      fiber_per_100g REAL NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS meals (
@@ -128,6 +129,7 @@ function initDb() {
   try { db.exec('ALTER TABLE meal_foods ADD COLUMN qty INTEGER NOT NULL DEFAULT 1'); } catch {}
   try { db.exec("ALTER TABLE user_profiles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'"); } catch {}
   try { db.exec('ALTER TABLE exercises ADD COLUMN user_id INTEGER REFERENCES users(id)'); } catch {}
+  try { db.exec('ALTER TABLE foods ADD COLUMN fiber_per_100g REAL NOT NULL DEFAULT 0'); } catch {}
   db.prepare("DELETE FROM exercises WHERE name IN ('Power Clean', 'test', 'test1') AND user_id IS NULL").run();
 
   // Seed exercise library
