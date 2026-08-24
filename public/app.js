@@ -884,13 +884,14 @@ async function loadMeals() {
         <td>${(item.protein * qty).toFixed(1)}g</td>
         <td>${(item.carbs * qty).toFixed(1)}g</td>
         <td>${(item.fat * qty).toFixed(1)}g</td>
+        <td>${((item.fiber || 0) * qty).toFixed(1)}g</td>
       </tr>`;
     }).join('');
 
     el.innerHTML = `
       <table class="analysis-table">
         <thead>
-          <tr><th>Item</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th></tr>
+          <tr><th>Item</th><th>Calories</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Fiber</th></tr>
         </thead>
         <tbody>${rows}</tbody>
         <tfoot>
@@ -900,6 +901,7 @@ async function loadMeals() {
             <td><strong>${data.total.protein.toFixed(1)}g</strong></td>
             <td><strong>${data.total.carbs.toFixed(1)}g</strong></td>
             <td><strong>${data.total.fat.toFixed(1)}g</strong></td>
+            <td><strong>${(data.total.fiber || 0).toFixed(1)}g</strong></td>
           </tr>
         </tfoot>
       </table>
