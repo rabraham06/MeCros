@@ -178,7 +178,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 .bar-fill--cal  { background: var(--cal); }
 .bar-fill--prot { background: var(--prot); }
 .bar-fill--carb { background: var(--carb); }
-.bar-fill--fat  { background: var(--fat); }
+.bar-fill--fat   { background: var(--fat); }
+.bar-fill--fiber { background: #4ade80; }
 
 /* ── Form controls ─────────────────────────────────────────────────────────── */
 .input {
@@ -448,6 +449,7 @@ textarea.input { resize: vertical; line-height: 1.5; }
 .nt-bar-wrap { flex: 1; height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
 .nt-bar { height: 100%; background: var(--cal); border-radius: 99px; transition: width .3s; }
 .nt-bar--prot { background: var(--prot); }
+.nt-bar--fiber { background: #4ade80; }
 .nt-range { font-size: .75rem; color: var(--text-muted); white-space: nowrap; }
 
 .meal-analyzer { padding: 1rem 1.25rem; }
