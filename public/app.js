@@ -497,7 +497,8 @@ async function loadMeals() {
       <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value stat-value--cal">${totals.calories.toFixed(0)}</div></div>
       <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value stat-value--prot">${totals.protein.toFixed(1)}g</div></div>
       <div class="stat-card"><div class="stat-label">Carbs</div><div class="stat-value stat-value--carb">${totals.carbs.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--fat">${totals.fat.toFixed(1)}g</div></div>`;
+      <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--fat">${totals.fat.toFixed(1)}g</div></div>
+      <div class="stat-card"><div class="stat-label">Fiber</div><div class="stat-value stat-value--fiber">${totals.fiber.toFixed(1)}g</div></div>`;
 
     const targetsEl = document.getElementById('nutrition-targets');
     if (currentProfile?.cal_low) {
@@ -639,7 +640,8 @@ async function loadMeals() {
         <span><strong>${m.macros.calories.toFixed(0)}</strong> cal</span>
         <span>P <strong>${m.macros.protein.toFixed(1)}g</strong></span>
         <span>C <strong>${m.macros.carbs.toFixed(1)}g</strong></span>
-        <span>F <strong>${m.macros.fat.toFixed(1)}g</strong></span>`;
+        <span>F <strong>${m.macros.fat.toFixed(1)}g</strong></span>
+        <span>Fi <strong>${(m.macros.fiber || 0).toFixed(1)}g</strong></span>`;
       card.appendChild(totalsDiv);
 
       el.appendChild(card);
@@ -812,6 +814,7 @@ async function loadMeals() {
       protein_per_100g:   aiEstimateData.protein,
       carbs_per_100g:     aiEstimateData.carbs,
       fat_per_100g:       aiEstimateData.fat,
+      fiber_per_100g:     aiEstimateData.fiber || 0,
     });
     await post(`/api/meals/${addFoodMealId}/foods`, { food_id: food.id, amount_g: amount });
     toast(aiEstimateData.name + ' added');
@@ -928,6 +931,7 @@ async function loadMeals() {
         protein_per_100g:  item.protein,
         carbs_per_100g:    item.carbs,
         fat_per_100g:      item.fat,
+        fiber_per_100g:    item.fiber || 0,
       });
       await post(`/api/meals/${mealId}/foods`, { food_id: food.id, amount_g: 100 * qty, qty });
     }
