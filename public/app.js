@@ -133,8 +133,9 @@ const App = (() => {
       : 'No workouts yet';
 
     const m = d.todayMacros || {};
-    const calGoal  = profile?.daily_calories || 2500;
-    const protGoal = profile?.daily_protein  || 180;
+    const calGoal   = profile?.daily_calories || 2500;
+    const protGoal  = profile?.daily_protein  || 180;
+    const fiberGoal = profile?.fiber_high || Math.round(calGoal / 1000 * 14);
     // Estimate carb/fat targets from remaining calories after protein
     const protCals = protGoal * 4;
     const remaining = Math.max(0, calGoal - protCals);
@@ -145,18 +146,20 @@ const App = (() => {
       document.getElementById(barId).style.width = Math.min(100, ((val || 0) / goal) * 100) + '%';
       document.getElementById(valId).textContent = (val || 0).toFixed(0) + unit;
     };
-    setBar('bar-cal',  'val-cal',  m.calories, calGoal,  ' cal');
-    setBar('bar-prot', 'val-prot', m.protein,  protGoal, 'g');
-    setBar('bar-carb', 'val-carb', m.carbs,    carbGoal, 'g');
-    setBar('bar-fat',  'val-fat',  m.fat,      fatGoal,  'g');
+    setBar('bar-cal',   'val-cal',   m.calories, calGoal,   ' cal');
+    setBar('bar-prot',  'val-prot',  m.protein,  protGoal,  'g');
+    setBar('bar-carb',  'val-carb',  m.carbs,    carbGoal,  'g');
+    setBar('bar-fat',   'val-fat',   m.fat,      fatGoal,   'g');
+    setBar('bar-fiber', 'val-fiber', m.fiber,    fiberGoal, 'g');
 
     // Show targets beneath the macro bars if profile exists
     const targetsEl = document.getElementById('macro-targets');
     if (targetsEl && profile) {
-      const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[profile.goal] || '';
-      const calRange  = profile.cal_low  && profile.cal_high  ? `${profile.cal_low}–${profile.cal_high}`   : calGoal;
-      const protRange = profile.prot_low && profile.prot_high ? `${profile.prot_low}–${profile.prot_high}` : protGoal;
-      targetsEl.innerHTML = `<span class="macro-target-badge">${goalLabel}</span> Target: <strong>${calRange} cal</strong> · <strong>${protRange}g protein</strong>`;
+      const goalLabel  = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[profile.goal] || '';
+      const calRange   = profile.cal_low  && profile.cal_high  ? `${profile.cal_low}–${profile.cal_high}`   : calGoal;
+      const protRange  = profile.prot_low && profile.prot_high ? `${profile.prot_low}–${profile.prot_high}` : protGoal;
+      const fiberRange = profile.fiber_low && profile.fiber_high ? `${profile.fiber_low}–${profile.fiber_high}g fiber` : `${fiberGoal}g fiber`;
+      targetsEl.innerHTML = `<span class="macro-target-badge">${goalLabel}</span> Target: <strong>${calRange} cal</strong> · <strong>${protRange}g protein</strong> · <strong>${fiberRange}</strong>`;
       targetsEl.classList.remove('hidden');
     }
 
@@ -487,7 +490,8 @@ async function loadMeals() {
       protein:  acc.protein  + (m.macros.protein  || 0),
       carbs:    acc.carbs    + (m.macros.carbs     || 0),
       fat:      acc.fat      + (m.macros.fat       || 0),
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      fiber:    acc.fiber    + (m.macros.fiber     || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
     document.getElementById('nutrition-summary').innerHTML = `
       <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value stat-value--cal">${totals.calories.toFixed(0)}</div></div>
@@ -499,8 +503,9 @@ async function loadMeals() {
     if (currentProfile?.cal_low) {
       const p = currentProfile;
       const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[p.goal] || '';
-      const calPct  = Math.min(100, Math.round(totals.calories / p.cal_high  * 100));
-      const protPct = Math.min(100, Math.round(totals.protein  / p.prot_low  * 100));
+      const calPct   = Math.min(100, Math.round(totals.calories / p.cal_high  * 100));
+      const protPct  = Math.min(100, Math.round(totals.protein  / p.prot_low  * 100));
+      const fiberPct = p.fiber_high ? Math.min(100, Math.round(totals.fiber / p.fiber_high * 100)) : 0;
       targetsEl.innerHTML = `
         <div class="nt-label">${esc(goalLabel)} Targets</div>
         <div class="nt-rows">
@@ -514,6 +519,11 @@ async function loadMeals() {
             <div class="nt-bar-wrap"><div class="nt-bar nt-bar--prot" style="width:${protPct}%"></div></div>
             <span class="nt-range">${totals.protein.toFixed(1)}g / ${p.prot_low}–${p.prot_high}g</span>
           </div>
+          ${p.fiber_low ? `<div class="nt-row">
+            <span class="nt-name">Fiber</span>
+            <div class="nt-bar-wrap"><div class="nt-bar nt-bar--fiber" style="width:${fiberPct}%"></div></div>
+            <span class="nt-range">${totals.fiber.toFixed(1)}g / ${p.fiber_low}–${p.fiber_high}g</span>
+          </div>` : ''}
         </div>`;
       targetsEl.classList.remove('hidden');
     } else {
@@ -1043,6 +1053,7 @@ async function loadMeals() {
     const tdee = bmr * (MULT[activity] || 1.55);
     const [cLo, cHi] = CAL[goal]  || [0, 200];
     const [pLo, pHi] = PR[goal]   || [0.8, 1.0];
+    const targetCal  = tdee + (cLo + cHi) / 2;
 
     currentProfile = {
       ...currentProfile,
@@ -1052,10 +1063,12 @@ async function loadMeals() {
       activity_level: activity,
       goal,
       gender,
-      cal_low:   Math.round(tdee + cLo),
-      cal_high:  Math.round(tdee + cHi),
-      prot_low:  Math.round(weight * pLo),
-      prot_high: Math.round(weight * pHi),
+      cal_low:    Math.round(tdee + cLo),
+      cal_high:   Math.round(tdee + cHi),
+      prot_low:   Math.round(weight * pLo),
+      prot_high:  Math.round(weight * pHi),
+      fiber_low:  Math.round(targetCal / 1000 * 12),
+      fiber_high: Math.round(targetCal / 1000 * 16),
     };
 
     // Update the displayed name everywhere
