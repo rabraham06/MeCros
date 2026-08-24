@@ -363,7 +363,7 @@ const db = initDb();
           role: 'user',
           content: `Estimate the macronutrients per 100g for: "${name}".
 Reply with ONLY a valid JSON object, no explanation or markdown:
-{"calories": number, "protein": number, "carbs": number, "fat": number}
+{"calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}
 Use realistic average values for this food.`
         }]
       });
@@ -396,11 +396,11 @@ If the description is not food or drink, respond with exactly: {"error":"not_foo
 Reply with ONLY a valid JSON object, no explanation or markdown:
 {
   "items": [
-    { "name": "string", "qty": number, "calories": number, "protein": number, "carbs": number, "fat": number }
+    { "name": "string", "qty": number, "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number }
   ],
-  "total": { "calories": number, "protein": number, "carbs": number, "fat": number }
+  "total": { "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number }
 }
-calories/protein/carbs/fat are for ONE unit of that item (not the total qty, not per 100g).
+calories/protein/carbs/fat/fiber are for ONE unit of that item (not the total qty, not per 100g).
 qty defaults to 1 if not a repeated item.`,
         }]
       });
@@ -425,10 +425,10 @@ qty defaults to 1 if not a repeated item.`,
   });
 
   app.post('/api/foods', (req, res) => {
-    const { name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g } = req.body;
+    const { name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g = 0 } = req.body;
     const r = db.prepare(
-      'INSERT INTO foods (name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(name, brand || null, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g);
+      'INSERT INTO foods (name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(name, brand || null, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g);
     res.json(db.prepare('SELECT * FROM foods WHERE id=?').get(r.lastInsertRowid));
   });
 
