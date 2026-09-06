@@ -176,9 +176,9 @@ const db = initDb();
   app.post('/api/profile/setup', (req, res) => {
     const { display_name, height_cm, weight_lbs, activity_level, goal, gender = 'male' } = req.body;
     if (!isStr(display_name, 100)) return bad(res, 'Display name required (max 100 chars)');
-    if (!isNum(height_cm, 50, 300)) return bad(res, 'height_cm must be a number between 50 and 300');
-    if (!isNum(weight_lbs, 50, 1500)) return bad(res, 'weight_lbs must be a number between 50 and 1500');
-    if (!VALID_ACTIVITY.has(activity_level)) return bad(res, 'Invalid activity_level');
+    if (!isNum(height_cm, 50, 300)) return bad(res, 'Your height must be a number between 50 and 300');
+    if (!isNum(weight_lbs, 50, 1500)) return bad(res, 'Your weight must be a number between 50 and 1500');
+    if (!VALID_ACTIVITY.has(activity_level)) return bad(res, 'Invalid activity level');
     if (!VALID_GOAL.has(goal)) return bad(res, 'Invalid goal');
     if (!VALID_GENDER.has(gender)) return bad(res, 'Invalid gender');
     const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high, fiber_low, fiber_high } =
