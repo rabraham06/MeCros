@@ -51,7 +51,7 @@ const VALID_GOAL      = new Set(['bulking', 'lean_bulking', 'cutting']);
 const VALID_GENDER    = new Set(['male', 'female']);
 const VALID_CATEGORY  = new Set(['Strength', 'Isolation', 'Cardio', 'Core']);
 const VALID_EQUIPMENT = new Set(['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Other']);
-const DATE_RE         = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_RE         = /^\d{4}-\d{2}-\d{2}(T[\d:]+)?$/;
 
 function isStr(v, max = 200)  { return typeof v === 'string' && v.trim().length > 0 && v.length <= max; }
 function isNum(v, min, max)   { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max; }
