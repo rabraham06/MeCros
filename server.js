@@ -45,6 +45,21 @@ app.use('/api/nutrition/analyze', rateLimit({
   message: { error: 'AI analyze limit reached — try again in a minute.' },
 }));
 
+// ── Input validation helpers ─────────────────────────────────────────────────
+const VALID_ACTIVITY  = new Set(['sedentary', 'light', 'moderate', 'active']);
+const VALID_GOAL      = new Set(['bulking', 'lean_bulking', 'cutting']);
+const VALID_GENDER    = new Set(['male', 'female']);
+const VALID_CATEGORY  = new Set(['Strength', 'Isolation', 'Cardio', 'Core']);
+const VALID_EQUIPMENT = new Set(['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Other']);
+const DATE_RE         = /^\d{4}-\d{2}-\d{2}$/;
+
+function isStr(v, max = 200)  { return typeof v === 'string' && v.trim().length > 0 && v.length <= max; }
+function isNum(v, min, max)   { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max; }
+function isInt(v, min, max)   { const n = Number(v); return Number.isInteger(n) && n >= min && n <= max; }
+function isDate(v)            { return typeof v === 'string' && DATE_RE.test(v) && !isNaN(Date.parse(v)); }
+
+function bad(res, msg) { return res.status(400).json({ error: msg }); }
+
 // ── Auth helpers ──────────────────────────────────────────────────────────────
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -84,16 +99,18 @@ const db = initDb();
   // ── Auth routes (public — no token required) ──────────────────────────────
   app.post('/api/auth/register', (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
-    if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
-    if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    const existing = db.prepare('SELECT id FROM users WHERE username=?').get(username);
+    if (!isStr(username, 50) || !isStr(password, 200))
+      return bad(res, 'Username and password required');
+    if (username.trim().length < 3) return bad(res, 'Username must be at least 3 characters');
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username.trim())) return bad(res, 'Username may only contain letters, numbers, _ . -');
+    if (password.length < 6) return bad(res, 'Password must be at least 6 characters');
+    const existing = db.prepare('SELECT id FROM users WHERE username=?').get(username.trim());
     if (existing) return res.status(409).json({ error: 'Username already taken' });
     try {
       const password_hash = hashPassword(password);
       const token = generateToken();
-      const r = db.prepare('INSERT INTO users (username, password_hash, token) VALUES (?, ?, ?)').run(username, password_hash, token);
-      res.json({ token, userId: r.lastInsertRowid, username });
+      const r = db.prepare('INSERT INTO users (username, password_hash, token) VALUES (?, ?, ?)').run(username.trim(), password_hash, token);
+      res.json({ token, userId: r.lastInsertRowid, username: username.trim() });
     } catch (err) {
       res.status(500).json({ error: 'Registration failed' });
     }
@@ -101,8 +118,8 @@ const db = initDb();
 
   app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
-    const user = db.prepare('SELECT * FROM users WHERE username=?').get(username);
+    if (!isStr(username, 50) || !isStr(password, 200)) return bad(res, 'Username and password required');
+    const user = db.prepare('SELECT * FROM users WHERE username=?').get(username.trim());
     if (!user) return res.status(401).json({ error: 'Invalid username or password' });
     try {
       if (!verifyPassword(password, user.password_hash)) return res.status(401).json({ error: 'Invalid username or password' });
@@ -158,9 +175,12 @@ const db = initDb();
 
   app.post('/api/profile/setup', (req, res) => {
     const { display_name, height_cm, weight_lbs, activity_level, goal, gender = 'male' } = req.body;
-    if (!display_name || !height_cm || !weight_lbs || !activity_level || !goal) {
-      return res.status(400).json({ error: 'All fields required' });
-    }
+    if (!isStr(display_name, 100)) return bad(res, 'Display name required (max 100 chars)');
+    if (!isNum(height_cm, 50, 300)) return bad(res, 'height_cm must be a number between 50 and 300');
+    if (!isNum(weight_lbs, 50, 1500)) return bad(res, 'weight_lbs must be a number between 50 and 1500');
+    if (!VALID_ACTIVITY.has(activity_level)) return bad(res, 'Invalid activity_level');
+    if (!VALID_GOAL.has(goal)) return bad(res, 'Invalid goal');
+    if (!VALID_GENDER.has(gender)) return bad(res, 'Invalid gender');
     const { daily_calories, daily_protein, cal_low, cal_high, prot_low, prot_high, fiber_low, fiber_high } =
       calcRanges(weight_lbs, height_cm, activity_level, goal, gender);
     const existing = db.prepare('SELECT user_id FROM user_profiles WHERE user_id=?').get(req.userId);
@@ -210,19 +230,25 @@ const db = initDb();
   // ─── EXERCISES ────────────────────────────────────────────────────────────
   app.get('/api/exercises', (req, res) => {
     const { category, muscle } = req.query;
+    if (category && !VALID_CATEGORY.has(category)) return bad(res, 'Invalid category filter');
     let sql = 'SELECT * FROM exercises WHERE (user_id IS NULL OR user_id=?)';
     const params = [req.userId];
     if (category) { sql += ' AND category=?'; params.push(category); }
-    if (muscle) { sql += ' AND muscle_group=?'; params.push(muscle); }
+    if (muscle) { sql += ' AND muscle_group=?'; params.push(typeof muscle === 'string' ? muscle.slice(0, 50) : ''); }
     sql += ' ORDER BY name';
     res.json(db.prepare(sql).all(...params));
   });
 
   app.post('/api/exercises', (req, res) => {
     const { name, category, muscle_group, equipment, instructions } = req.body;
+    if (!isStr(name, 100)) return bad(res, 'Exercise name required (max 100 chars)');
+    if (!VALID_CATEGORY.has(category)) return bad(res, 'Invalid category');
+    if (!isStr(muscle_group, 50)) return bad(res, 'Muscle group required (max 50 chars)');
+    const equip = VALID_EQUIPMENT.has(equipment) ? equipment : 'Bodyweight';
+    if (instructions !== undefined && !isStr(instructions, 1000) && instructions !== '') return bad(res, 'Instructions too long (max 1000 chars)');
     const r = db.prepare(
       'INSERT INTO exercises (name, category, muscle_group, equipment, instructions, user_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(name, category, muscle_group, equipment || 'Bodyweight', instructions || '', req.userId);
+    ).run(name.trim(), category, muscle_group.trim(), equip, (instructions || '').slice(0, 1000), req.userId);
     res.json(db.prepare('SELECT * FROM exercises WHERE id=?').get(r.lastInsertRowid));
   });
 
@@ -243,9 +269,10 @@ const db = initDb();
 
   app.post('/api/workouts', (req, res) => {
     const { name, notes } = req.body;
+    if (!isStr(name, 100)) return bad(res, 'Workout name required (max 100 chars)');
     const r = db.prepare(
       'INSERT INTO workouts (user_id, name, notes) VALUES (?, ?, ?)'
-    ).run(req.userId, name, notes || '');
+    ).run(req.userId, name.trim(), (notes || '').slice(0, 500));
     res.json(db.prepare('SELECT * FROM workouts WHERE id=?').get(r.lastInsertRowid));
   });
 
@@ -274,9 +301,16 @@ const db = initDb();
 
   app.post('/api/workouts/:id/sets', (req, res) => {
     const { exercise_id, set_number, reps, weight_kg, duration_sec, notes } = req.body;
+    const wid = parseInt(req.params.id, 10);
+    if (!isInt(wid, 1, 1e9)) return bad(res, 'Invalid workout id');
+    if (!isInt(exercise_id, 1, 1e9)) return bad(res, 'Invalid exercise_id');
+    if (!isInt(set_number, 1, 100)) return bad(res, 'set_number must be an integer 1–100');
+    if (reps !== null && reps !== undefined && !isInt(reps, 1, 9999)) return bad(res, 'reps must be a positive integer up to 9999');
+    if (weight_kg !== null && weight_kg !== undefined && !isNum(weight_kg, 0, 2000)) return bad(res, 'weight_kg must be 0–2000');
+    if (duration_sec !== null && duration_sec !== undefined && !isInt(duration_sec, 0, 86400)) return bad(res, 'duration_sec must be 0–86400');
     const r = db.prepare(
       'INSERT INTO workout_sets (workout_id, exercise_id, set_number, reps, weight_kg, duration_sec, notes) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.params.id, exercise_id, set_number, reps || null, weight_kg || null, duration_sec || null, notes || '');
+    ).run(wid, exercise_id, set_number, reps || null, weight_kg ?? null, duration_sec || null, (notes || '').slice(0, 300));
 
     if (weight_kg && reps) {
       const existing = db.prepare(
@@ -334,9 +368,11 @@ const db = initDb();
 
   app.post('/api/bodyweight', (req, res) => {
     const { weight_kg, logged_at } = req.body;
+    if (!isNum(weight_kg, 10, 700)) return bad(res, 'weight_kg must be a number between 10 and 700');
+    if (logged_at && !isDate(logged_at)) return bad(res, 'logged_at must be a valid YYYY-MM-DD date');
     const r = db.prepare(
       'INSERT INTO body_weight (user_id, weight_kg, logged_at) VALUES (?, ?, ?)'
-    ).run(req.userId, weight_kg, logged_at || new Date().toISOString());
+    ).run(req.userId, Number(weight_kg), logged_at || new Date().toISOString());
     res.json(db.prepare('SELECT * FROM body_weight WHERE id=?').get(r.lastInsertRowid));
   });
 
@@ -353,7 +389,7 @@ const db = initDb();
   // ─── AI MACRO ESTIMATE ────────────────────────────────────────────────────
   app.post('/api/foods/estimate', async (req, res) => {
     const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Food name required' });
+    if (!isStr(name, 200)) return bad(res, 'Food name required (max 200 chars)');
     try {
       const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -380,7 +416,7 @@ Use realistic average values for this food.`
   // ─── AI MEAL ANALYZER ────────────────────────────────────────────────────
   app.post('/api/nutrition/analyze', async (req, res) => {
     const { description } = req.body;
-    if (!description || !description.trim()) return res.status(400).json({ error: 'Meal description required' });
+    if (!isStr(description, 1000)) return bad(res, 'Meal description required (max 1000 chars)');
     try {
       const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -417,24 +453,33 @@ qty defaults to 1 if not a repeated item.`,
   // ─── FOODS ────────────────────────────────────────────────────────────────
   app.get('/api/foods', (req, res) => {
     const { q } = req.query;
+    if (q && (typeof q !== 'string' || q.length > 100)) return bad(res, 'Search query too long (max 100 chars)');
     let sql = 'SELECT * FROM foods';
     const params = [];
-    if (q) { sql += ' WHERE name LIKE ? OR brand LIKE ?'; params.push(`%${q}%`, `%${q}%`); }
+    if (q) { sql += ' WHERE name LIKE ? OR brand LIKE ?'; params.push(`%${q.trim()}%`, `%${q.trim()}%`); }
     sql += ' ORDER BY name LIMIT 50';
     res.json(db.prepare(sql).all(...params));
   });
 
   app.post('/api/foods', (req, res) => {
     const { name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g = 0 } = req.body;
+    if (!isStr(name, 200)) return bad(res, 'Food name required (max 200 chars)');
+    if (brand !== undefined && brand !== null && !isStr(brand, 100)) return bad(res, 'Brand too long (max 100 chars)');
+    if (!isNum(calories_per_100g, 0, 9000)) return bad(res, 'calories_per_100g must be 0–9000');
+    if (!isNum(protein_per_100g, 0, 100)) return bad(res, 'protein_per_100g must be 0–100');
+    if (!isNum(carbs_per_100g, 0, 100)) return bad(res, 'carbs_per_100g must be 0–100');
+    if (!isNum(fat_per_100g, 0, 100)) return bad(res, 'fat_per_100g must be 0–100');
+    if (!isNum(fiber_per_100g, 0, 100)) return bad(res, 'fiber_per_100g must be 0–100');
     const r = db.prepare(
       'INSERT INTO foods (name, brand, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(name, brand || null, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g);
+    ).run(name.trim(), brand ? brand.trim() : null, Number(calories_per_100g), Number(protein_per_100g), Number(carbs_per_100g), Number(fat_per_100g), Number(fiber_per_100g));
     res.json(db.prepare('SELECT * FROM foods WHERE id=?').get(r.lastInsertRowid));
   });
 
   // ─── MEALS ────────────────────────────────────────────────────────────────
   app.get('/api/meals', (req, res) => {
     const { date } = req.query;
+    if (date && !isDate(date)) return bad(res, 'date must be YYYY-MM-DD');
     const d = date || estDateStr();
 const meals = db.prepare(
       "SELECT * FROM meals WHERE user_id=? AND substr(logged_at,1,10)=? ORDER BY logged_at ASC"
@@ -466,15 +511,17 @@ const meals = db.prepare(
 
   app.post('/api/meals', (req, res) => {
     const { name, logged_at } = req.body;
+    if (!isStr(name, 100)) return bad(res, 'Meal name required (max 100 chars)');
+    if (logged_at && !isDate(logged_at)) return bad(res, 'logged_at must be a valid YYYY-MM-DD date');
     const r = db.prepare(
       'INSERT INTO meals (user_id, name, logged_at) VALUES (?, ?, ?)'
-    ).run(req.userId, name, logged_at);
+    ).run(req.userId, name.trim(), logged_at || estDateStr());
     res.json(db.prepare('SELECT * FROM meals WHERE id=?').get(r.lastInsertRowid));
   });
 
   app.patch('/api/meals/:id', (req, res) => {
     const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name required' });
+    if (!isStr(name, 100)) return bad(res, 'Name required (max 100 chars)');
     db.prepare('UPDATE meals SET name=? WHERE id=? AND user_id=?').run(name, req.params.id, req.userId);
     res.json({ ok: true });
   });
@@ -487,9 +534,14 @@ const meals = db.prepare(
 
   app.post('/api/meals/:id/foods', (req, res) => {
     const { food_id, amount_g, qty = 1 } = req.body;
+    const mid = parseInt(req.params.id, 10);
+    if (!isInt(mid, 1, 1e9)) return bad(res, 'Invalid meal id');
+    if (!isInt(food_id, 1, 1e9)) return bad(res, 'Invalid food_id');
+    if (!isNum(amount_g, 0.1, 5000)) return bad(res, 'amount_g must be between 0.1 and 5000');
+    if (!isInt(qty, 1, 99)) return bad(res, 'qty must be an integer 1–99');
     const existing = db.prepare(
       'SELECT * FROM meal_foods WHERE meal_id=? AND food_id=?'
-    ).get(req.params.id, food_id);
+    ).get(mid, food_id);
     if (existing) {
       db.prepare(
         'UPDATE meal_foods SET qty=qty+?, amount_g=amount_g+? WHERE id=?'
@@ -498,7 +550,7 @@ const meals = db.prepare(
     } else {
       const r = db.prepare(
         'INSERT INTO meal_foods (meal_id, food_id, amount_g, qty) VALUES (?, ?, ?, ?)'
-      ).run(req.params.id, food_id, amount_g, qty);
+      ).run(mid, food_id, Number(amount_g), Number(qty));
       res.json(db.prepare('SELECT * FROM meal_foods WHERE id=?').get(r.lastInsertRowid));
     }
   });
