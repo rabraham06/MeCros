@@ -163,8 +163,9 @@
     <div class="tab-header">
       <h1>Nutrition</h1>
       <input type="date" id="meal-date" class="input" aria-label="Select date" onchange="App.loadMeals()" />
-      <button type="button" class="btn btn--primary" onclick="App.showAddMeal()">+ Add Meal</button>
     </div>
+
+    <button type="button" class="btn btn--primary" onclick="App.showAddMeal()" style="width:100%;margin-bottom:1rem;justify-content:center">+ Add Meal</button>
 
     <div id="nutrition-summary" class="stat-grid" style="margin-bottom:.75rem"></div>
     <div id="nutrition-targets" class="card hidden" style="margin-bottom:1rem"></div>
