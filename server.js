@@ -416,7 +416,7 @@ Use realistic average values for this food.`
   // ─── AI MEAL ANALYZER ────────────────────────────────────────────────────
   app.post('/api/nutrition/analyze', async (req, res) => {
     const { description } = req.body;
-    if (!isStr(description, 1000)) return bad(res, 'Meal description required (max 1000 chars)');
+    if (!isStr(description, 5000)) return bad(res, 'Meal description required (max 5000 chars)');
     try {
       const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
