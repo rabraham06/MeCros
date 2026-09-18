@@ -163,6 +163,7 @@
     <div class="tab-header">
       <h1>Nutrition</h1>
       <input type="date" id="meal-date" class="input" aria-label="Select date" onchange="App.loadMeals()" />
+      <button type="button" class="btn btn--primary" onclick="App.showAddMeal()">+ Add Meal</button>
     </div>
 
     <div id="nutrition-summary" class="stat-grid" style="margin-bottom:.75rem"></div>
@@ -205,7 +206,6 @@
         <input id="food-search" class="input" placeholder="Search food…" aria-label="Search food database"
                oninput="App.searchFoods()"
                onkeydown="if(event.key==='Escape') App.hideAddFoodToMeal()" />
-        <input id="food-amount" type="number" class="input" placeholder="Amount (g)" aria-label="Amount in grams" />
         <button type="button" class="btn btn--primary" id="estimate-btn" onclick="App.estimateMacros()">✦ AI Estimate</button>
       </div>
 
