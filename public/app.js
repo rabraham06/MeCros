@@ -696,7 +696,8 @@ async function loadMeals() {
     if (!dateInput.value) dateInput.value = localDateStr();
     await post('/api/meals', { name, logged_at: dateInput.value + 'T12:00:00' });
     document.getElementById('meal-name').value = '';
-    hideAddMeal();
+    document.getElementById('meal-name-count').textContent = '0/50';
+    document.getElementById('meal-name').focus();
     toast('Meal created');
     loadMeals();
   }
@@ -712,7 +713,6 @@ async function loadMeals() {
     addFoodMealId = mealId;
     document.getElementById('meal-target-name').textContent = mealName;
     document.getElementById('food-search').value    = '';
-    document.getElementById('food-amount').value    = '';
     document.getElementById('food-results').innerHTML = '';
     discardAiEstimate();
     document.getElementById('add-food-to-meal').classList.remove('hidden');
@@ -788,9 +788,9 @@ async function loadMeals() {
     try {
       const data = await post('/api/foods/estimate', { name });
       aiEstimateData = { name, ...data };
-      const amount = parseFloat(document.getElementById('food-amount').value) || 100;
-      const scale  = amount / 100;
-      document.getElementById('ai-estimate-name').textContent = `${name} (${amount}g) — AI estimate`;
+      const amount = 100;
+      const scale  = 1;
+      document.getElementById('ai-estimate-name').textContent = `${name} (per 100g) — AI estimate`;
       document.getElementById('ai-estimate-values').innerHTML = `
         <span>🔥 <strong>${(data.calories * scale).toFixed(0)}</strong> kcal</span>
         <span>Protein <strong>${(data.protein * scale).toFixed(1)}g</strong></span>
@@ -807,8 +807,6 @@ async function loadMeals() {
 
   async function saveAiEstimate() {
     if (!aiEstimateData || !addFoodMealId) return;
-    const amount = parseFloat(document.getElementById('food-amount').value);
-    if (!amount || amount <= 0) return toast('Enter amount in grams first', 'error');
     const food = await post('/api/foods', {
       name:               aiEstimateData.name,
       calories_per_100g:  aiEstimateData.calories,
@@ -817,7 +815,7 @@ async function loadMeals() {
       fat_per_100g:       aiEstimateData.fat,
       fiber_per_100g:     aiEstimateData.fiber || 0,
     });
-    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: food.id, amount_g: amount });
+    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: food.id, amount_g: 100 });
     toast(aiEstimateData.name + ' added');
     discardAiEstimate();
     loadMeals();
@@ -833,7 +831,6 @@ async function loadMeals() {
     if (!addFoodMealId) return;
     await post(`/api/meals/${addFoodMealId}/foods`, { food_id: foodId, amount_g: amount, qty });
     toast(qty > 1 ? `${qty}× food added` : 'Food added');
-    document.getElementById('food-amount').value = '';
     loadMeals();
   }
 
