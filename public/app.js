@@ -539,7 +539,6 @@ async function loadMeals() {
         <div class="empty-state">
           <div class="empty-state__icon">🥗</div>
           <p class="empty-state__text">No meals logged for this day.</p>
-          <button type="button" class="btn btn--primary" onclick="App.showAddMeal()">Add a meal</button>
         </div>`;
       return;
     }
