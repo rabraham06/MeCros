@@ -94,6 +94,11 @@ const App = (() => {
   }
 
   // ── Tab navigation ─────────────────────────────────────────────────────────
+  function switchTab(tabName) {
+    const btn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+    if (btn) btn.click();
+  }
+
   function initNav() {
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1173,5 +1178,6 @@ async function loadMeals() {
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     loadSettings, saveSettings, settingsToggle, updateSettingsTargets,
+    switchTab,
   };
 })();
