@@ -3,339 +3,162 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MeCros — Setup</title>
+  <title>MeCros · Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Kalam:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .desk { max-width: 760px; }
+    .sheet { min-height: 0; }
 
-    :root {
-      --bg:         #0f1117;
-      --surface:    #1a1d27;
-      --surface2:   #22263a;
-      --border:     #2e3248;
-      --accent:     #6c63ff;
-      --danger:     #ff6584;
-      --success:    #4caf7d;
-      --text:       #e8eaf6;
-      --text-muted: #8b90a8;
-      --radius:     12px;
-      --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
+    .lede { color: var(--ink-2); max-width: 48ch; margin: -14px 0 34px; }
 
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-      -webkit-font-smoothing: antialiased;
-    }
+    .part { margin-bottom: 34px; }
+    .part > h2 { padding-bottom: 8px; border-bottom: 1.5px solid var(--ink); margin-bottom: 18px; }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 480px;
-      box-shadow: 0 4px 32px rgba(0,0,0,.45);
-    }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 22px; }
+    .fields .span-2 { grid-column: 1 / -1; }
+    .fields label,
+    .group-label { display: block; font-size: .88rem; font-weight: 600; margin-bottom: 6px; }
+    .fields label small { font-weight: 400; color: var(--ink-2); }
+    .height-row { display: flex; gap: 8px; }
 
-    .logo {
-      font-size: 1.4rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: .25rem;
-      letter-spacing: -.02em;
-    }
-    .logo span { color: var(--accent); }
+    .toggle-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .toggle-btn { flex: 1 1 140px; }
+    .toggle-btn .btn-sub { display: block; font-size: .76rem; font-weight: 400; opacity: .8; margin-top: 2px; }
 
-    .subtitle {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: .875rem;
-      margin-bottom: 2rem;
-    }
-
-    .section-label {
-      font-size: .75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      margin-bottom: .5rem;
-    }
-
-    .field { margin-bottom: 1.25rem; }
-
-    label {
-      display: block;
-      font-size: .8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-bottom: .4rem;
-    }
-
-    .input {
-      font-family: var(--font);
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .625rem .875rem;
-      color: var(--text);
-      font-size: .9375rem;
-      outline: none;
-      transition: border-color 150ms, box-shadow 150ms;
-    }
-    .input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(108,99,255,.18);
-    }
-    .input::placeholder { color: var(--text-muted); }
-
-    .height-row { display: flex; gap: .5rem; }
-    .height-row .input { flex: 1; cursor: pointer; }
-
-    /* Toggle button group */
-    .toggle-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
-    }
-    .toggle-btn {
-      font-family: var(--font);
-      flex: 1;
-      min-width: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .55rem .75rem;
-      color: var(--text-muted);
-      font-size: .8125rem;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: center;
-      transition: background 150ms, border-color 150ms, color 150ms;
-      line-height: 1.3;
-    }
-    .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
-    .toggle-btn.active {
-      background: rgba(108,99,255,.18);
-      border-color: var(--accent);
-      color: var(--text);
-    }
-    .toggle-btn .btn-sub {
-      display: block;
-      font-size: .7rem;
-      color: var(--text-muted);
-      margin-top: .15rem;
-    }
-    .toggle-btn.active .btn-sub { color: #a09af5; }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 1.5rem 0;
-    }
-
-    /* Recommendation panel */
-    .rec-panel {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
-      display: none;
-    }
-    .rec-panel.show { display: block; }
-    .rec-panel__label {
-      font-size: .75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      margin-bottom: .75rem;
-    }
-    .rec-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .75rem;
-    }
-    .rec-item { text-align: center; }
-    .rec-item__value {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--accent);
-      line-height: 1;
-    }
-    .rec-item__unit {
-      font-size: .75rem;
-      color: var(--text-muted);
-      margin-top: .2rem;
-    }
-
-    .btn {
-      font-family: var(--font);
-      width: 100%;
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      padding: .75rem;
-      color: #fff;
-      font-size: .9375rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 150ms;
-    }
-    .btn:hover { background: #7b73ff; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .error {
-      background: rgba(255,101,132,.12);
-      border: 1px solid rgba(255,101,132,.3);
-      color: var(--danger);
-      border-radius: 8px;
-      padding: .625rem .875rem;
-      font-size: .875rem;
-      margin-bottom: 1rem;
-      display: none;
-    }
+    .error { display: none; color: var(--brick); margin-bottom: 16px; }
     .error.show { display: block; }
-    .app-footer {
-      position: fixed;
-      bottom: .75rem;
-      right: 1rem;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: .7rem;
-      letter-spacing: .12em;
-      color: rgba(255,255,255,.35);
-      pointer-events: none;
-      z-index: 50;
+
+    .finish { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+    .finish__hint { font-family: var(--hand); color: var(--ink-2); }
+
+    @media (max-width: 760px) {
+      .fields { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body style="visibility:hidden">
-<div class="card">
-  <div class="logo">Me<span>Cros</span></div>
-  <p class="subtitle">Let's set up your profile</p>
+<div class="desk">
+  <header class="masthead">
+    <span class="wordmark">MeCros</span>
+    <p class="masthead__date">page one</p>
+  </header>
 
-  <div id="errorMsg" class="error"></div>
+  <main class="sheet">
+    <h1>Before you start</h1>
+    <p class="lede">A few numbers so your calorie and protein targets are actually yours. All of it can be changed later in Settings.</p>
 
-  <!-- Name -->
-  <div class="field">
-    <label for="displayName">Your Name</label>
-    <input id="displayName" class="input" type="text" placeholder="e.g. John" autocomplete="given-name" oninput="recalc()" />
-  </div>
+    <div id="errorMsg" class="error" role="alert"></div>
 
-  <!-- Height -->
-  <div class="field">
-    <label>Height</label>
-    <div class="height-row">
-      <select id="heightFt" class="input" onchange="recalc()">
-        <option value="">ft</option>
-        <option value="4">4 ft</option>
-        <option value="5">5 ft</option>
-        <option value="6">6 ft</option>
-        <option value="7">7 ft</option>
-      </select>
-      <select id="heightIn" class="input" onchange="recalc()">
-        <option value="">in</option>
-        <option value="0">0 in</option>
-        <option value="1">1 in</option>
-        <option value="2">2 in</option>
-        <option value="3">3 in</option>
-        <option value="4">4 in</option>
-        <option value="5">5 in</option>
-        <option value="6">6 in</option>
-        <option value="7">7 in</option>
-        <option value="8">8 in</option>
-        <option value="9">9 in</option>
-        <option value="10">10 in</option>
-        <option value="11">11 in</option>
-      </select>
+    <section class="part">
+      <h2>You</h2>
+      <div class="fields">
+        <div class="span-2">
+          <label for="displayName">What should we call you?</label>
+          <input id="displayName" class="input" type="text" placeholder="First name" autocomplete="given-name" oninput="recalc()" />
+        </div>
+
+        <div>
+          <label for="heightFt">Height</label>
+          <div class="height-row">
+            <select id="heightFt" class="input" onchange="recalc()" aria-label="Height, feet">
+              <option value="">ft</option>
+              <option value="4">4 ft</option>
+              <option value="5">5 ft</option>
+              <option value="6">6 ft</option>
+              <option value="7">7 ft</option>
+            </select>
+            <select id="heightIn" class="input" onchange="recalc()" aria-label="Height, inches">
+              <option value="">in</option>
+              <option value="0">0 in</option>
+              <option value="1">1 in</option>
+              <option value="2">2 in</option>
+              <option value="3">3 in</option>
+              <option value="4">4 in</option>
+              <option value="5">5 in</option>
+              <option value="6">6 in</option>
+              <option value="7">7 in</option>
+              <option value="8">8 in</option>
+              <option value="9">9 in</option>
+              <option value="10">10 in</option>
+              <option value="11">11 in</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="weight">Weight <small>(lbs)</small></label>
+          <input id="weight" class="input" type="number" placeholder="180" min="50" max="500" oninput="recalc()" />
+        </div>
+
+        <div class="span-2">
+          <span class="group-label">Gender</span>
+          <div class="toggle-group" id="genderGroup">
+            <button type="button" class="settings-toggle toggle-btn active" data-val="male"
+                    onclick="selectToggle('genderGroup', this)">Male</button>
+            <button type="button" class="settings-toggle toggle-btn" data-val="female"
+                    onclick="selectToggle('genderGroup', this)">Female</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="part">
+      <h2>How much you move</h2>
+      <div class="toggle-group" id="activityGroup">
+        <button type="button" class="settings-toggle toggle-btn" data-val="sedentary"
+                onclick="selectToggle('activityGroup', this)">
+          Sedentary
+          <span class="btn-sub">Desk job, little exercise</span>
+        </button>
+        <button type="button" class="settings-toggle toggle-btn" data-val="light"
+                onclick="selectToggle('activityGroup', this)">
+          Light
+          <span class="btn-sub">1–3 workouts a week</span>
+        </button>
+        <button type="button" class="settings-toggle toggle-btn" data-val="moderate"
+                onclick="selectToggle('activityGroup', this)">
+          Moderate
+          <span class="btn-sub">3–5 workouts a week</span>
+        </button>
+        <button type="button" class="settings-toggle toggle-btn" data-val="active"
+                onclick="selectToggle('activityGroup', this)">
+          Very active
+          <span class="btn-sub">6–7 workouts a week</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="part">
+      <h2>What you’re after</h2>
+      <div class="toggle-group" id="goalGroup">
+        <button type="button" class="settings-toggle toggle-btn" data-val="bulking"
+                onclick="selectToggle('goalGroup', this)">
+          Bulking
+          <span class="btn-sub">As much muscle as possible</span>
+        </button>
+        <button type="button" class="settings-toggle toggle-btn" data-val="lean_bulking"
+                onclick="selectToggle('goalGroup', this)">
+          Lean bulking
+          <span class="btn-sub">Muscle, not much fat</span>
+        </button>
+        <button type="button" class="settings-toggle toggle-btn" data-val="cutting"
+                onclick="selectToggle('goalGroup', this)">
+          Cutting
+          <span class="btn-sub">Drop fat, keep muscle</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="finish">
+      <button type="button" class="btn btn--primary" id="saveBtn" onclick="saveProfile()" disabled>Save &amp; open my log</button>
+      <span class="finish__hint" id="finishHint">fill in everything above first</span>
     </div>
-  </div>
+  </main>
 
-  <!-- Weight -->
-  <div class="field">
-    <label for="weight">Weight (lbs)</label>
-    <input id="weight" class="input" type="number" placeholder="e.g. 180" min="50" max="500" oninput="recalc()" />
-  </div>
-
-  <!-- Gender -->
-  <div class="field">
-    <div class="section-label">Gender</div>
-    <div class="toggle-group" id="genderGroup">
-      <button type="button" class="toggle-btn active" data-val="male"
-              onclick="selectToggle('genderGroup', this)">
-        Male
-      </button>
-      <button type="button" class="toggle-btn" data-val="female"
-              onclick="selectToggle('genderGroup', this)">
-        Female
-      </button>
-    </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- Activity Level -->
-  <div class="field">
-    <div class="section-label">Activity Level</div>
-    <div class="toggle-group" id="activityGroup">
-      <button type="button" class="toggle-btn" data-val="sedentary"
-              onclick="selectToggle('activityGroup', this)">
-        Sedentary
-        <span class="btn-sub">Desk job, little exercise</span>
-      </button>
-      <button type="button" class="toggle-btn" data-val="light"
-              onclick="selectToggle('activityGroup', this)">
-        Light
-        <span class="btn-sub">1–3 workouts/week</span>
-      </button>
-      <button type="button" class="toggle-btn" data-val="moderate"
-              onclick="selectToggle('activityGroup', this)">
-        Moderate
-        <span class="btn-sub">3–5 workouts/week</span>
-      </button>
-      <button type="button" class="toggle-btn" data-val="active"
-              onclick="selectToggle('activityGroup', this)">
-        Very Active
-        <span class="btn-sub">6–7 workouts/week</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- Goal -->
-  <div class="field">
-    <div class="section-label">Your Goal</div>
-    <div class="toggle-group" id="goalGroup">
-      <button type="button" class="toggle-btn" data-val="bulking"
-              onclick="selectToggle('goalGroup', this)">
-        Bulking
-        <span class="btn-sub">Maximize muscle gain</span>
-      </button>
-      <button type="button" class="toggle-btn" data-val="lean_bulking"
-              onclick="selectToggle('goalGroup', this)">
-        Lean Bulking
-        <span class="btn-sub">Muscle with minimal fat</span>
-      </button>
-      <button type="button" class="toggle-btn" data-val="cutting"
-              onclick="selectToggle('goalGroup', this)">
-        Cutting
-        <span class="btn-sub">Lose fat, keep muscle</span>
-      </button>
-    </div>
-  </div>
-
-  <button type="button" class="btn" id="saveBtn" onclick="saveProfile()" disabled>Save &amp; Get Started</button>
+  <footer class="sign">made by rohan · 2026</footer>
 </div>
 
 <script>
@@ -381,6 +204,7 @@
 
     const ready = name && hasHeight && weight > 0 && activity && goal && gender;
     document.getElementById('saveBtn').disabled = !ready;
+    document.getElementById('finishHint').classList.toggle('hidden', !!ready);
   }
 
   function showError(msg) {
@@ -399,7 +223,7 @@
     const gender   = getSelected('genderGroup');
 
     if (!name || isNaN(ft) || isNaN(inch) || !weight || !activity || !goal || !gender) {
-      return showError('Please fill in all fields.');
+      return showError('A few fields are still empty.');
     }
 
     const height_cm  = ((ft * 12) + inch) * 2.54;
@@ -428,13 +252,12 @@
       sessionStorage.setItem('mecros_has_profile', '1');
       window.location.href = '/';
     } catch {
-      showError('Could not reach the server.');
+      showError('Couldn’t reach the server.');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Save & Get Started';
+      btn.textContent = 'Save & open my log';
     }
   }
 </script>
-<footer class="app-footer">made by rohan · © 2026</footer>
 </body>
 </html>
