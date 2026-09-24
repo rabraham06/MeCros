@@ -149,9 +149,9 @@ const App = (() => {
 
     const setBar = (barId, valId, val, goal, unit) => {
       document.getElementById(barId).style.width = Math.min(100, ((val || 0) / goal) * 100) + '%';
-      document.getElementById(valId).textContent = (val || 0).toFixed(0) + unit;
+      document.getElementById(valId).innerHTML = `${(val || 0).toFixed(0)}<span class="of"> / ${goal}${unit}</span>`;
     };
-    setBar('bar-cal',   'val-cal',   m.calories, calGoal,   ' cal');
+    setBar('bar-cal',   'val-cal',   m.calories, calGoal,   '');
     setBar('bar-prot',  'val-prot',  m.protein,  protGoal,  'g');
     setBar('bar-carb',  'val-carb',  m.carbs,    carbGoal,  'g');
     setBar('bar-fat',   'val-fat',   m.fat,      fatGoal,   'g');
@@ -164,7 +164,7 @@ const App = (() => {
       const calRange   = profile.cal_low  && profile.cal_high  ? `${profile.cal_low}–${profile.cal_high}`   : calGoal;
       const protRange  = profile.prot_low && profile.prot_high ? `${profile.prot_low}–${profile.prot_high}` : protGoal;
       const fiberRange = profile.fiber_low && profile.fiber_high ? `${profile.fiber_low}–${profile.fiber_high}g fiber` : `${fiberGoal}g fiber`;
-      targetsEl.innerHTML = `<span class="macro-target-badge">${goalLabel}</span> Target: <strong>${calRange} cal</strong> · <strong>${protRange}g protein</strong> · <strong>${fiberRange}</strong>`;
+      targetsEl.innerHTML = `<span class="macro-target-badge">${goalLabel.toLowerCase()}</span> aiming for <strong>${calRange} cal</strong> · <strong>${protRange}g protein</strong> · <strong>${fiberRange}</strong>`;
       targetsEl.classList.remove('hidden');
     }
 
@@ -176,48 +176,57 @@ const App = (() => {
     const el = document.getElementById('workout-list');
     el.innerHTML = '';
 
+    el.classList.toggle('log', list.length > 0);
+
     if (!list.length) {
       el.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">🏋️</div>
-          <p class="empty-state__text">No workouts logged yet.</p>
-          <button type="button" class="btn btn--primary" onclick="App.startWorkout()">Start your first workout</button>
-        </div>`;
+        <p class="note">Nothing in the log yet. Start a workout and your sessions will stack up here.</p>`;
       return;
     }
 
     list.forEach(w => {
       const div = document.createElement('div');
-      div.className = 'workout-card';
+      div.className = 'log-row';
       div.setAttribute('role', 'button');
       div.setAttribute('tabindex', '0');
+
+      const started = new Date(w.started_at);
+      const dateEl  = document.createElement('div');
+      dateEl.className = 'log-row__date';
+      dateEl.innerHTML = `<span>${started.getDate()}</span>${started.toLocaleDateString('en-GB', { month: 'short' })}`;
 
       const nameEl  = document.createElement('div');
       const metaEl  = document.createElement('div');
       const infoDiv = document.createElement('div');
-      nameEl.className = 'workout-card__name';
-      metaEl.className = 'workout-card__meta';
+      nameEl.className = 'log-row__name';
+      metaEl.className = 'log-row__meta';
       nameEl.textContent = w.name;
-      metaEl.textContent = fmtDatetime(w.started_at) + (w.notes ? ' · ' + w.notes : '');
+      metaEl.textContent = 'started ' + started.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        + (w.notes ? ' · ' + w.notes : '');
       infoDiv.appendChild(nameEl);
       infoDiv.appendChild(metaEl);
 
       const statusEl = document.createElement('span');
-      statusEl.className = w.finished_at ? 'workout-card__status' : 'workout-card__status workout-card__status--active';
-      statusEl.textContent = w.finished_at ? fmtDatetime(w.finished_at) : 'Active';
+      if (w.finished_at) {
+        statusEl.textContent = 'done ' + fmtDatetime(w.finished_at);
+      } else {
+        statusEl.className = 'log-row__live';
+        statusEl.textContent = 'in progress';
+      }
 
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'btn btn--danger btn--icon btn--sm';
       delBtn.setAttribute('aria-label', 'Delete workout');
-      delBtn.textContent = '✕';
+      delBtn.textContent = '×';
       delBtn.addEventListener('click', e => { e.stopPropagation(); deleteWorkout(w.id); });
 
       const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'workout-card__actions';
+      actionsDiv.className = 'log-row__side';
       actionsDiv.appendChild(statusEl);
       actionsDiv.appendChild(delBtn);
 
+      div.appendChild(dateEl);
       div.appendChild(infoDiv);
       div.appendChild(actionsDiv);
       div.addEventListener('click', () => viewWorkout(w));
@@ -255,13 +264,13 @@ const App = (() => {
     document.getElementById('active-name').textContent = w.name;
     document.getElementById('active-workout').classList.remove('hidden');
     await populateExerciseSelect();
-    toast('Workout started!');
+    toast('Workout started');
   }
 
   async function populateExerciseSelect() {
     const exercises = await get('/api/exercises');
     const sel = document.getElementById('set-exercise');
-    sel.innerHTML = '<option value="">Select exercise…</option>';
+    sel.innerHTML = '<option value="">Pick an exercise…</option>';
     exercises.forEach(e => {
       const opt = document.createElement('option');
       opt.value = e.id;
@@ -309,7 +318,7 @@ const App = (() => {
         <td>${s.weight_kg ? esc(String(s.weight_kg)) + ' lbs' : '—'}</td>
         <td>${s.reps      ? esc(String(s.reps))      + ' reps' : '—'}</td>
         <td>
-          <button type="button" class="btn btn--danger btn--icon btn--sm" aria-label="Delete set" onclick="App.deleteSet(${s.id})">✕</button>
+          <button type="button" class="btn btn--danger btn--icon btn--sm" aria-label="Delete set" onclick="App.deleteSet(${s.id})">×</button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -329,7 +338,7 @@ const App = (() => {
     activeWorkoutId = null;
     document.getElementById('active-workout').classList.add('hidden');
     document.getElementById('set-list').innerHTML = '';
-    toast('Workout saved!');
+    toast('Saved to your log');
     loadWorkouts();
   }
 
@@ -392,27 +401,23 @@ const App = (() => {
     const el = document.getElementById('exercise-list');
     el.innerHTML = '';
 
+    el.classList.toggle('ex-index', exercises.length > 0);
+
     if (!exercises.length) {
-      el.innerHTML = '<p class="text-muted">No exercises match the selected filters.</p>';
+      el.innerHTML = '<p class="note">Nothing matches that combination.</p>';
       return;
     }
 
     exercises.forEach(e => {
       const div = document.createElement('div');
-      div.className = 'exercise-card';
+      div.className = 'ex-item';
       div.innerHTML = `
-        <h3>${esc(e.name)}</h3>
-        <div style="margin:.35rem 0">
-          <span class="tag tag--cat">${esc(e.category)}</span>
-          <span class="tag tag--muscle">${esc(e.muscle_group)}</span>
-          <span class="tag tag--equip">${esc(e.equipment)}</span>
-        </div>
-        ${e.instructions ? `<p class="exercise-card__instructions">${esc(e.instructions)}</p>` : ''}`;
+        <h3>${esc(e.name)}${e.user_id ? '<span class="ex-item__mine">yours</span>' : ''}</h3>
+        <p class="ex-item__meta">${esc(e.muscle_group)} · ${esc(e.equipment)} · ${esc(e.category)}</p>
+        ${e.instructions ? `<p class="ex-item__how">${esc(e.instructions)}</p>` : ''}`;
       if (e.user_id) {
-        const delBtn = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteExercise(e.id));
+        const delBtn = makeBtn('×', 'btn--icon btn--danger btn--sm ex-item__del', null, () => deleteExercise(e.id));
         delBtn.setAttribute('aria-label', 'Delete exercise');
-        delBtn.style.cssText = 'position:absolute;top:.5rem;right:.5rem';
-        div.style.position = 'relative';
         div.appendChild(delBtn);
       }
       el.appendChild(div);
@@ -457,24 +462,21 @@ const App = (() => {
     const el = document.getElementById('pr-list');
     el.innerHTML = '';
 
+    el.classList.toggle('pr-grid', bests.length > 0);
+
     if (!bests.length) {
-      el.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">🏅</div>
-          <p class="empty-state__text">No PRs yet — start logging sets!</p>
-        </div>`;
+      el.innerHTML = `<p class="note">The board’s empty. Log a few sets and your best lifts land here.</p>`;
       return;
     }
 
     bests.forEach(pr => {
       const div = document.createElement('div');
-      div.className = 'pr-card';
+      div.className = 'pr-row';
       div.innerHTML = `
-        <div class="pr-card__name">${esc(pr.exercise_name)}</div>
-        <div class="pr-card__weight">${esc(String(pr.best_weight))} lbs</div>
-        <div class="pr-card__detail">${esc(String(pr.reps))} reps · ${fmtDate(pr.achieved_at)}</div>
-        <div style="margin-top:.5rem">
-          <span class="tag tag--muscle">${esc(pr.muscle_group)}</span>
+        <div class="pr-row__weight">${esc(String(pr.best_weight))}<small>lbs</small></div>
+        <div>
+          <div class="pr-row__name">${esc(pr.exercise_name)}</div>
+          <div class="pr-row__detail">${esc(String(pr.reps))} reps · ${fmtDate(pr.achieved_at)} · ${esc(pr.muscle_group)}</div>
         </div>`;
       el.appendChild(div);
     });
@@ -499,11 +501,13 @@ async function loadMeals() {
     }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 
     document.getElementById('nutrition-summary').innerHTML = `
-      <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value stat-value--cal">${totals.calories.toFixed(0)}</div></div>
-      <div class="stat-card"><div class="stat-label">Protein</div><div class="stat-value stat-value--prot">${totals.protein.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Carbs</div><div class="stat-value stat-value--carb">${totals.carbs.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Fat</div><div class="stat-value stat-value--fat">${totals.fat.toFixed(1)}g</div></div>
-      <div class="stat-card"><div class="stat-label">Fiber</div><div class="stat-value stat-value--fiber">${totals.fiber.toFixed(1)}g</div></div>`;
+      <p class="day-total__kcal"><span>${totals.calories.toFixed(0)}</span>kcal</p>
+      <p class="day-total__macros">
+        <span><b>${totals.protein.toFixed(1)}</b> g protein</span>
+        <span><b>${totals.carbs.toFixed(1)}</b> g carbs</span>
+        <span><b>${totals.fat.toFixed(1)}</b> g fat</span>
+        <span><b>${totals.fiber.toFixed(1)}</b> g fiber</span>
+      </p>`;
 
     const targetsEl = document.getElementById('nutrition-targets');
     if (currentProfile?.cal_low) {
@@ -513,7 +517,7 @@ async function loadMeals() {
       const protPct  = Math.min(100, Math.round(totals.protein  / p.prot_low  * 100));
       const fiberPct = p.fiber_high ? Math.min(100, Math.round(totals.fiber / p.fiber_high * 100)) : 0;
       targetsEl.innerHTML = `
-        <div class="nt-label">${esc(goalLabel)} Targets</div>
+        <div class="nt-label">Against your ${esc(goalLabel.toLowerCase())} targets</div>
         <div class="nt-rows">
           <div class="nt-row">
             <span class="nt-name">Calories</span>
@@ -540,11 +544,7 @@ async function loadMeals() {
     el.innerHTML = '';
 
     if (!meals.length) {
-      el.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">🥗</div>
-          <p class="empty-state__text">No meals logged for this day.</p>
-        </div>`;
+      el.innerHTML = `<p class="note">No meals written down for this day. Hit “New meal” to start one.</p>`;
       return;
     }
 
@@ -579,9 +579,9 @@ async function loadMeals() {
       const actions = document.createElement('div');
       actions.className = 'meal-card__actions';
 
-      const editBtn = makeBtn('Edit name', 'btn--sm', 'meal-edit-btn-' + m.id,  () => startEditMeal(m.id));
+      const editBtn = makeBtn('Rename',    'btn--sm', 'meal-edit-btn-' + m.id,  () => startEditMeal(m.id));
       const saveBtn = makeBtn('Save',      'btn--sm btn--primary hidden', 'meal-save-btn-' + m.id, () => saveMealName(m.id));
-      const addBtn  = makeBtn('+ Food',    'btn--sm btn--primary', null, () => openAddFoodToMeal(m.id, m.name));
+      const addBtn  = makeBtn('Add food',  'btn--sm btn--primary', null, () => openAddFoodToMeal(m.id, m.name));
       const delBtn  = makeBtn('Delete',    'btn--sm btn--danger', null, () => deleteMeal(m.id));
 
       actions.appendChild(editBtn);
@@ -595,9 +595,8 @@ async function loadMeals() {
       // Food rows
       if (m.foods.length === 0) {
         const empty = document.createElement('p');
-        empty.className = 'text-muted';
-        empty.style.fontSize = '.875rem';
-        empty.textContent = 'No foods added yet.';
+        empty.className = 'meal-card__empty';
+        empty.textContent = 'empty plate so far';
         card.appendChild(empty);
       } else {
         m.foods.forEach(f => {
@@ -622,8 +621,8 @@ async function loadMeals() {
           const qtyLabel = document.createElement('span');
           qtyLabel.className = 'food-row__qty';
           qtyLabel.textContent = f.qty + '×';
-          const plusBtn  = makeBtn('+', 'btn--icon btn--sm btn--primary', null, () => incrementMealFood(m.id, f.food_id, f.serving_g));
-          const delBtn   = makeBtn('✕', 'btn--icon btn--danger btn--sm', null, () => deleteMealFood(m.id, f.food_id));
+          const plusBtn  = makeBtn('+', 'btn--icon btn--sm', null, () => incrementMealFood(m.id, f.food_id, f.serving_g));
+          const delBtn   = makeBtn('×', 'btn--icon btn--danger btn--sm', null, () => deleteMealFood(m.id, f.food_id));
           delBtn.setAttribute('aria-label', 'Remove ' + f.name);
 
           rowActions.appendChild(minusBtn);
@@ -701,6 +700,7 @@ async function loadMeals() {
     await post('/api/meals', { name, logged_at: dateInput.value + 'T12:00:00' });
     document.getElementById('meal-name').value = '';
     document.getElementById('meal-name-count').textContent = '0/50';
+    document.getElementById('meal-name-count').classList.remove('full');
     document.getElementById('meal-name').focus();
     toast('Meal created');
     loadMeals();
@@ -719,8 +719,10 @@ async function loadMeals() {
     document.getElementById('food-search').value    = '';
     document.getElementById('food-results').innerHTML = '';
     discardAiEstimate();
-    document.getElementById('add-food-to-meal').classList.remove('hidden');
-    document.getElementById('food-search').focus();
+    const panel = document.getElementById('add-food-to-meal');
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('food-search').focus({ preventScroll: true });
   }
 
   function hideAddFoodToMeal() {
@@ -794,17 +796,17 @@ async function loadMeals() {
       aiEstimateData = { name, ...data };
       const amount = 100;
       const scale  = 1;
-      document.getElementById('ai-estimate-name').textContent = `${name} (per 100g) — AI estimate`;
+      document.getElementById('ai-estimate-name').textContent = `${name}, per 100 g (estimated)`;
       document.getElementById('ai-estimate-values').innerHTML = `
-        <span>🔥 <strong>${(data.calories * scale).toFixed(0)}</strong> kcal</span>
+        <span><strong>${(data.calories * scale).toFixed(0)}</strong> kcal</span>
         <span>Protein <strong>${(data.protein * scale).toFixed(1)}g</strong></span>
         <span>Carbs <strong>${(data.carbs * scale).toFixed(1)}g</strong></span>
         <span>Fat <strong>${(data.fat * scale).toFixed(1)}g</strong></span>`;
       document.getElementById('ai-estimate-result').classList.remove('hidden');
     } catch {
-      toast('AI estimate failed', 'error');
+      toast('Couldn’t estimate that one', 'error');
     } finally {
-      btn.textContent = '✦ AI Estimate';
+      btn.textContent = 'Not listed? Estimate it';
       btn.disabled = false;
     }
   }
@@ -868,9 +870,9 @@ async function loadMeals() {
       lastAnalysisData = data;
       renderMealAnalysis(data, desc);
     } catch {
-      toast('Could not analyze meal — try again', 'error');
+      toast('Couldn’t read that meal, try rewording it', 'error');
     } finally {
-      btn.textContent = 'Analyze';
+      btn.textContent = 'Estimate';
       btn.disabled = false;
     }
   }
@@ -881,7 +883,7 @@ async function loadMeals() {
       const qty = Math.max(1, Math.round(item.qty) || 1);
       return `
       <tr>
-        <td>${esc(item.name)}${qty > 1 ? ` <span style="color:var(--text-muted);font-size:.8em">${qty}×</span>` : ''}</td>
+        <td>${esc(item.name)}${qty > 1 ? ` <span class="text-muted">${qty}×</span>` : ''}</td>
         <td>${Math.round(item.calories * qty)}</td>
         <td>${(item.protein * qty).toFixed(1)}g</td>
         <td>${(item.carbs * qty).toFixed(1)}g</td>
@@ -912,7 +914,7 @@ async function loadMeals() {
           ${currentMeals.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')}
         </select>
         <button type="button" class="btn btn--primary btn--sm" onclick="App.logAnalyzedMeal()">
-          + Add to meal
+          Add to meal
         </button>
         <button type="button" class="btn btn--sm" onclick="document.getElementById('meal-analysis-result').classList.add('hidden')">
           Dismiss
@@ -939,7 +941,7 @@ async function loadMeals() {
       });
       await post(`/api/meals/${mealId}/foods`, { food_id: food.id, amount_g: 100 * qty, qty });
     }
-    toast('Foods added!');
+    toast('Added to meal');
     document.getElementById('meal-analysis-result').classList.add('hidden');
     document.getElementById('meal-description').value = '';
     lastAnalysisData = null;
@@ -1015,8 +1017,8 @@ async function loadMeals() {
 
     const goalLabel = { bulking: 'Bulking', lean_bulking: 'Lean Bulking', cutting: 'Cutting' }[goal] || '';
     el.innerHTML = `
-      <span class="macro-target-badge">${goalLabel}</span>
-      New targets: <strong>${calRange} cal/day</strong> · <strong>${protRange}g protein/day</strong>`;
+      <span class="macro-target-badge">${goalLabel.toLowerCase()}</span>
+      works out to <strong>${calRange} cal/day</strong> · <strong>${protRange}g protein/day</strong>`;
     el.classList.remove('hidden');
   }
 
@@ -1082,7 +1084,7 @@ async function loadMeals() {
     // Update the displayed name everywhere
     const usernameEl = document.getElementById('user-name');
     if (usernameEl) usernameEl.textContent = name;
-    const headerName = document.querySelector('.app-nav + div span');
+    const headerName = document.getElementById('whoami-name');
     if (headerName) headerName.textContent = name;
 
     loadDashboard();
@@ -1097,14 +1099,14 @@ async function loadMeals() {
   function axisStyle() {
     return {
       grid:  { color: 'rgba(255,255,255,.05)' },
-      ticks: { color: cssVar('--text-muted') },
+      ticks: { color: cssVar('--ink-2') },
     };
   }
 
   function chartOpts(unit = '') {
     return {
       responsive: true,
-      plugins: { legend: { labels: { color: cssVar('--text-muted') } } },
+      plugins: { legend: { labels: { color: cssVar('--ink-2') } } },
       scales: {
         x: axisStyle(),
         y: { ...axisStyle(), ticks: { ...axisStyle().ticks, callback: v => v + (unit ? ' ' + unit : '') } },
@@ -1132,18 +1134,29 @@ async function loadMeals() {
     // Show display name from profile (fallback to username)
     const displayName = profile?.display_name || cachedUsername || 'User';
 
-    // Show username and logout button in header
-    const nav = document.querySelector('.app-nav');
-    const userEl = document.createElement('div');
-    userEl.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-left:auto';
-    userEl.innerHTML = `
-      <button type="button" class="btn btn--icon btn--sm" aria-label="Settings" title="Settings" onclick="document.querySelector('.nav-btn[data-tab=settings]')?.click()" style="font-size:1.1rem">⚙</button>
-      <span style="font-size:.8rem;color:var(--text-muted)">${esc(displayName)}</span>
-      <button type="button" class="btn btn--sm" onclick="App.logout()">Sign out</button>`;
-    nav.after(userEl);
+    // Name, settings and sign-out in the masthead.
+    // Gear = dashed thick ring (the teeth) around a solid ring; exit = door frame + arrow.
+    const gearIcon = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="9" stroke-width="3.2" stroke-dasharray="3.2 3.8686"/>
+      <circle cx="12" cy="12" r="5.2" stroke-width="4.4"/></svg>`;
+    const exitIcon = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>`;
+    document.getElementById('whoami').innerHTML = `
+      <span class="who-name" id="whoami-name">${esc(displayName)}</span>
+      <button type="button" class="btn btn--sm who-btn who-settings" onclick="App.switchTab('settings')">${gearIcon}Settings</button>
+      <button type="button" class="btn btn--sm who-btn" onclick="App.logout()">${exitIcon}Sign out</button>`;
 
     const usernameEl = document.getElementById('user-name');
     if (usernameEl) usernameEl.textContent = displayName;
+
+    // Journal-style date line and a greeting that knows what time it is
+    const tz = 'America/New_York';
+    document.getElementById('today-line').textContent =
+      new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
+    const hour = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: tz }));
+    document.getElementById('greet-word').textContent =
+      hour < 5 ? 'Still up' : hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
 
     initNav();
     document.getElementById('meal-date').value = localDateStr();
