@@ -3,223 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MeCros — Sign In</title>
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <title>MeCros · Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Kalam:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .desk { max-width: 980px; padding-top: 48px; }
 
-    :root {
-      --bg:         #0f1117;
-      --surface:    #1a1d27;
-      --surface2:   #22263a;
-      --border:     #2e3248;
-      --accent:     #6c63ff;
-      --danger:     #ff6584;
-      --text:       #e8eaf6;
-      --text-muted: #8b90a8;
-      --radius:     12px;
-      --font:       'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-
-    body {
-      font-family: var(--font);
-      background: url('img.jpg') no-repeat center center fixed;
-      background-size: cover;
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
+    .login {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 56px;
       align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      -webkit-font-smoothing: antialiased;
+      min-height: 0;
+      padding-top: 44px;
+      padding-bottom: 48px;
     }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 4px 32px rgba(0,0,0,.45);
-    }
+    .login .wordmark { display: block; font-size: 3.6rem; margin-bottom: 10px; }
+    .lede { font-size: 1.05rem; color: var(--ink-2); max-width: 34ch; margin-bottom: 30px; }
 
-    .logo {
-      font-size: 1.6rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: .25rem;
-      letter-spacing: -.02em;
-    }
-    .logo span { color: var(--accent); }
-
-    .tagline {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: .875rem;
-      margin-bottom: 2rem;
-    }
-
-    .tabs {
-      display: flex;
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 3px;
-      margin-bottom: 1.5rem;
-    }
-    .tab-btn {
-      flex: 1;
-      font-family: var(--font);
+    .switch { display: flex; align-items: baseline; gap: 8px; margin-bottom: 20px; color: var(--ink-2); }
+    .switch__btn {
+      font: 600 1rem var(--body);
       background: none;
-      border: none;
-      color: var(--text-muted);
-      padding: .5rem;
-      border-radius: 6px;
+      border: 0;
+      padding: 0 0 2px;
+      color: var(--ink-2);
       cursor: pointer;
-      font-size: .875rem;
-      font-weight: 500;
-      transition: background 150ms, color 150ms;
+      border-bottom: 2px solid transparent;
     }
-    .tab-btn.active { background: var(--accent); color: #fff; }
+    .switch__btn:hover { color: var(--ink); }
+    .switch__btn.active { color: var(--ink); border-bottom-color: var(--accent); }
 
-    label {
-      display: block;
-      font-size: .8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-bottom: .35rem;
-    }
-
-    .input {
-      font-family: var(--font);
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .625rem .875rem;
-      color: var(--text);
-      font-size: .9375rem;
-      outline: none;
-      margin-bottom: 1rem;
-      transition: border-color 150ms, box-shadow 150ms;
-    }
-    .input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(108,99,255,.18);
-    }
-    .input::placeholder { color: var(--text-muted); }
-
-    .input-wrap {
-      position: relative;
-      margin-bottom: 1rem;
-    }
-    .input-wrap .input {
-      padding-left: 2.5rem;
-      margin-bottom: 0;
-    }
-    .input-icon {
-      position: absolute;
-      left: .75rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 1rem;
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    .btn {
-      font-family: var(--font);
-      width: 100%;
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      padding: .7rem;
-      color: #fff;
-      font-size: .9375rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 150ms;
-      margin-top: .25rem;
-    }
-    .btn:hover { background: #7b73ff; }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .login label { display: block; font-size: .88rem; font-weight: 600; margin-bottom: 6px; }
+    .login .input { margin-bottom: 16px; max-width: 340px; }
+    .login .btn { min-width: 150px; margin-top: 4px; }
 
     .error {
-      background: rgba(255,101,132,.12);
-      border: 1px solid rgba(255,101,132,.3);
-      color: var(--danger);
-      border-radius: 8px;
-      padding: .625rem .875rem;
-      font-size: .875rem;
-      margin-bottom: 1rem;
       display: none;
+      max-width: 340px;
+      color: var(--brick);
+      font-size: .9rem;
+      margin-bottom: 16px;
     }
     .error.show { display: block; }
-    .app-footer {
-      position: fixed;
-      bottom: .75rem;
-      right: 1rem;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: .7rem;
-      letter-spacing: .12em;
-      color: rgba(255,255,255,1);
-      pointer-events: none;
-      z-index: 50;
+
+    /* the photo, taped onto the page */
+    .snap {
+      position: relative;
+      justify-self: center;
+      width: 100%;
+      max-width: 340px;
+      background: var(--field);
+      padding: 12px 12px 8px;
+      border: 1px solid var(--rule-2);
+      box-shadow: 0 16px 24px -18px rgba(50, 35, 15, .55);
+      transform: rotate(2deg);
+    }
+    .snap::before {
+      content: '';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      width: 96px;
+      height: 26px;
+      transform: translateX(-50%) rotate(-3deg);
+      background: rgba(236, 222, 186, .78);
+      border: 1px solid rgba(180, 160, 120, .35);
+    }
+    .snap img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+    .snap figcaption { font-family: var(--hand); color: var(--ink-2); font-size: 1.1rem; padding-top: 6px; }
+
+    @media (max-width: 760px) {
+      .desk { padding-top: 20px; }
+      .login { grid-template-columns: 1fr; gap: 40px; padding-top: 30px; }
+      .login .wordmark { font-size: 3rem; }
+      .login .input { max-width: none; }
+      .snap { max-width: 240px; }
     }
   </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">Me<span>Cros</span></div>
-  <p class="tagline">Tracking your progress has never been easier</p>
+<div class="desk">
+  <main class="sheet login">
+    <section>
+      <span class="wordmark">MeCros</span>
+      <p class="lede">Lifts, sets and meals, all written down in one place.</p>
 
-  <div class="tabs">
-    <button type="button" class="tab-btn active" id="loginTab" onclick="showTab('login')">Sign In</button>
-    <button type="button" class="tab-btn" id="registerTab" onclick="showTab('register')">Register</button>
-  </div>
+      <div class="switch">
+        <button type="button" class="switch__btn active" id="loginTab" onclick="showTab('login')">Sign in</button>
+        <span>or</span>
+        <button type="button" class="switch__btn" id="registerTab" onclick="showTab('register')">make an account</button>
+      </div>
 
-  <div id="errorMsg" class="error"></div>
+      <div id="errorMsg" class="error" role="alert"></div>
 
-  <div id="loginForm">
-    <label for="loginUser">Username</label>
-    <div class="input-wrap">
-      <i class='bx bxs-user input-icon'></i>
-      <input id="loginUser" class="input" type="text" placeholder="your username" autocomplete="username" />
-    </div>
+      <div id="loginForm">
+        <label for="loginUser">Username</label>
+        <input id="loginUser" class="input" type="text" autocomplete="username" />
 
-    <label for="loginPass">Password</label>
-    <div class="input-wrap">
-      <i class='bx bxs-lock-alt input-icon'></i>
-      <input id="loginPass" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
-    </div>
+        <label for="loginPass">Password</label>
+        <input id="loginPass" class="input" type="password" autocomplete="current-password" />
 
-    <button type="button" class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
-  </div>
+        <button type="button" class="btn btn--primary" id="loginBtn" onclick="doLogin()">Sign in</button>
+      </div>
 
-  <div id="registerForm" style="display:none">
-    <label for="regUser">Username</label>
-    <div class="input-wrap">
-      <i class='bx bxs-user input-icon'></i>
-      <input id="regUser" class="input" type="text" placeholder="choose a username" autocomplete="username" />
-    </div>
+      <div id="registerForm" style="display:none">
+        <label for="regUser">Pick a username</label>
+        <input id="regUser" class="input" type="text" autocomplete="username" />
 
-    <label for="regPass">Password</label>
-    <div class="input-wrap">
-      <i class='bx bxs-lock-alt input-icon'></i>
-      <input id="regPass" class="input" type="password" placeholder="at least 6 characters" autocomplete="new-password" />
-    </div>
+        <label for="regPass">Password</label>
+        <input id="regPass" class="input" type="password" placeholder="6 characters or more" autocomplete="new-password" />
 
-    <label for="regPass2">Confirm Password</label>
-    <div class="input-wrap">
-      <i class='bx bxs-lock-alt input-icon'></i>
-      <input id="regPass2" class="input" type="password" placeholder="repeat password" autocomplete="new-password" />
-    </div>
+        <label for="regPass2">Same password again</label>
+        <input id="regPass2" class="input" type="password" autocomplete="new-password" />
 
-    <button type="button" class="btn" id="registerBtn" onclick="doRegister()">Create Account</button>
-  </div>
+        <button type="button" class="btn btn--primary" id="registerBtn" onclick="doRegister()">Create account</button>
+      </div>
+    </section>
+
+    <figure class="snap">
+      <img src="img.jpg" alt="Sliced steak, fried eggs and avocado on a wooden board" />
+    </figure>
+  </main>
+
+  <footer class="sign">made by rohan · 2026</footer>
 </div>
 
 <script>
@@ -246,13 +156,13 @@
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
     btn.disabled = loading;
-    btn.textContent = loading ? 'Please wait…' : (btnId === 'loginBtn' ? 'Sign In' : 'Create Account');
+    btn.textContent = loading ? 'One sec…' : (btnId === 'loginBtn' ? 'Sign in' : 'Create account');
   }
 
   async function doLogin() {
     const username = document.getElementById('loginUser').value.trim();
     const password = document.getElementById('loginPass').value;
-    if (!username || !password) return showError('Please fill in all fields.');
+    if (!username || !password) return showError('Need both a username and a password.');
     setLoading('loginBtn', true);
     try {
       const res = await fetch('/api/auth/login', {
@@ -266,7 +176,7 @@
       sessionStorage.setItem('mecros_username', data.username);
       window.location.href = '/';
     } catch {
-      showError('Could not reach the server.');
+      showError('Couldn’t reach the server.');
     } finally {
       setLoading('loginBtn', false);
     }
@@ -276,8 +186,8 @@
     const username = document.getElementById('regUser').value.trim();
     const password = document.getElementById('regPass').value;
     const confirm  = document.getElementById('regPass2').value;
-    if (!username || !password || !confirm) return showError('Please fill in all fields.');
-    if (password !== confirm) return showError('Passwords do not match.');
+    if (!username || !password || !confirm) return showError('Fill in all three fields.');
+    if (password !== confirm) return showError('Those passwords don’t match.');
     setLoading('registerBtn', true);
     try {
       const res = await fetch('/api/auth/register', {
@@ -291,7 +201,7 @@
       sessionStorage.setItem('mecros_username', data.username);
       window.location.href = '/setup.html';
     } catch {
-      showError('Could not reach the server.');
+      showError('Couldn’t reach the server.');
     } finally {
       setLoading('registerBtn', false);
     }
@@ -304,6 +214,5 @@
     if (loginVisible) doLogin(); else doRegister();
   });
 </script>
-<footer class="app-footer">made by rohan · © 2026</footer>
 </body>
 </html>
