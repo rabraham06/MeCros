@@ -982,6 +982,46 @@ async function loadMeals() {
     });
 
     updateSettingsTargets();
+
+    // Reflect saved theme in the toggle
+    const savedTheme = localStorage.getItem('mecros_theme') || '';
+    document.querySelectorAll('#set-theme .settings-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === savedTheme);
+    });
+  }
+
+  function setTheme(theme) {
+    const valid = ['light', 'dark', 'purple'];
+    if (!valid.includes(theme)) return;
+    localStorage.setItem('mecros_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('#set-theme .settings-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === theme);
+    });
+    closeThemeMenu();
+  }
+
+  function toggleThemeMenu() {
+    let menu = document.getElementById('theme-menu');
+    if (menu) { closeThemeMenu(); return; }
+    menu = document.createElement('div');
+    menu.id = 'theme-menu';
+    menu.className = 'theme-menu';
+    menu.innerHTML = `
+      <button onclick="App.setTheme('light')">☀️ Light</button>
+      <button onclick="App.setTheme('dark')">🌙 Dark</button>
+      <button onclick="App.setTheme('purple')">✦ Purple</button>`;
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', closeThemeMenuOutside), 0);
+  }
+
+  function closeThemeMenu() {
+    document.getElementById('theme-menu')?.remove();
+    document.removeEventListener('click', closeThemeMenuOutside);
+  }
+
+  function closeThemeMenuOutside(e) {
+    if (!e.target.closest('#theme-menu') && !e.target.closest('[aria-label="Change appearance"]')) closeThemeMenu();
   }
 
   function settingsToggle(groupId, btn) {
@@ -1142,10 +1182,15 @@ async function loadMeals() {
     const exitIcon = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>`;
+    const paletteIcon = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/>
+      <path d="M12 2C6.5 2 2 6.5 2 12a10 10 0 0 0 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>`;
     document.getElementById('whoami').innerHTML = `
       <span class="who-name" id="whoami-name">${esc(displayName)}</span>
+      <button type="button" class="btn btn--sm btn--icon who-btn" onclick="App.toggleThemeMenu()" aria-label="Change appearance">${paletteIcon}</button>
       <button type="button" class="btn btn--sm who-btn who-settings" onclick="App.switchTab('settings')">${gearIcon}Settings</button>
       <button type="button" class="btn btn--sm who-btn" onclick="App.logout()">${exitIcon}Sign out</button>`;
+
 
     const usernameEl = document.getElementById('user-name');
     if (usernameEl) usernameEl.textContent = displayName;
@@ -1191,6 +1236,6 @@ async function loadMeals() {
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     loadSettings, saveSettings, settingsToggle, updateSettingsTargets,
-    switchTab,
+    switchTab, setTheme, toggleThemeMenu,
   };
 })();

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MeCros</title>
   <script>if (!sessionStorage.getItem('mecros_token')) location.replace('/login.html');</script>
+  <script>(function(){ const t = localStorage.getItem('mecros_theme'); if (t) document.documentElement.setAttribute('data-theme', t); })();</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +17,7 @@
 <div class="desk">
 
   <header class="masthead">
-    <a class="wordmark" href="/" onclick="App.switchTab('dashboard'); return false">MeCros</a>
+    <a class="wordmark" href="/" onclick="App.switchTab('dashboard'); return false">Me<span class="wordmark__cros">Cros</span></a>
     <p class="masthead__date" id="today-line"></p>
     <div class="masthead__who" id="whoami"></div>
   </header>
@@ -320,6 +321,13 @@
         </div>
 
         <div id="settings-targets" class="settings-targets hidden"></div>
+
+        <div class="settings-section-label" style="margin-top:1.5rem;margin-bottom:.5rem;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)">Appearance</div>
+        <div class="settings-toggle-group" id="set-theme">
+          <button type="button" class="settings-toggle" data-val="light"  onclick="App.setTheme('light')">Light</button>
+          <button type="button" class="settings-toggle" data-val="dark"   onclick="App.setTheme('dark')">Dark</button>
+          <button type="button" class="settings-toggle" data-val="purple" onclick="App.setTheme('purple')">Purple</button>
+        </div>
 
         <div class="settings-save">
           <button type="button" class="btn btn--primary" onclick="App.saveSettings()">Save changes</button>
