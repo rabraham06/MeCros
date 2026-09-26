@@ -6,6 +6,8 @@ const App = (() => {
   let toastTimer      = null;
   let currentMeals    = [];
   let currentProfile  = null;
+  let settingsDirty   = false;
+  let pendingTheme    = null;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   const token = () => sessionStorage.getItem('mecros_token');
@@ -94,28 +96,39 @@ const App = (() => {
   }
 
   // ── Tab navigation ─────────────────────────────────────────────────────────
-  function switchTab(tabName) {
-    const btn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
-    if (btn) btn.click();
+  async function switchTab(tabName) {
+    const leavingSettings = document.body.dataset.tab === 'settings' && tabName !== 'settings';
+    if (leavingSettings && settingsDirty) {
+      const ok = await confirmDialog('You have unsaved changes. Leave without saving?');
+      if (!ok) return;
+      settingsDirty = false;
+      pendingTheme  = null;
+    }
+    activateTab(tabName);
+  }
+
+  function activateTab(tabName) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const navBtn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+    if (navBtn) navBtn.classList.add('active');
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.body.dataset.tab = tabName;
+    ({ dashboard: loadDashboard, workout: loadWorkouts, exercises: loadExercises,
+       records: loadPRs, nutrition: loadMeals, settings: loadSettings })[tabName]?.();
   }
 
   function initNav() {
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-        document.body.dataset.tab = btn.dataset.tab;
-        const loaders = {
-          dashboard: loadDashboard,
-          workout:   loadWorkouts,
-          exercises: loadExercises,
-          records:   loadPRs,
-          nutrition: loadMeals,
-          settings:  loadSettings,
-        };
-        loaders[btn.dataset.tab]?.();
+      btn.addEventListener('click', async () => {
+        const leavingSettings = document.body.dataset.tab === 'settings' && btn.dataset.tab !== 'settings';
+        if (leavingSettings && settingsDirty) {
+          const ok = await confirmDialog('You have unsaved changes. Leave without saving?');
+          if (!ok) return;
+          settingsDirty = false;
+          pendingTheme  = null;
+        }
+        activateTab(btn.dataset.tab);
       });
     });
 
@@ -988,6 +1001,13 @@ async function loadMeals() {
     document.querySelectorAll('#set-theme .settings-toggle').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.val === savedTheme);
     });
+
+    // Mark dirty on any change after fields are loaded
+    settingsDirty = false;
+    pendingTheme  = null;
+    document.querySelectorAll('#set-name, #set-height-ft, #set-height-in, #set-profile-weight').forEach(el => {
+      el.addEventListener('input', () => { settingsDirty = true; }, { once: false });
+    });
   }
 
   function setTheme(theme) {
@@ -999,6 +1019,10 @@ async function loadMeals() {
       btn.classList.toggle('active', btn.dataset.val === theme);
     });
     closeThemeMenu();
+  }
+
+  function setPendingTheme(theme) {
+    pendingTheme = theme;
   }
 
   function toggleThemeMenu() {
@@ -1027,6 +1051,7 @@ async function loadMeals() {
   function settingsToggle(groupId, btn) {
     document.querySelectorAll('#' + groupId + ' .settings-toggle').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    settingsDirty = true;
     updateSettingsTargets();
   }
 
@@ -1090,6 +1115,8 @@ async function loadMeals() {
       return toast(err.message || 'Failed to save settings', 'error');
     }
 
+    if (pendingTheme) { setTheme(pendingTheme); pendingTheme = null; }
+    settingsDirty = false;
     toast('Settings saved');
 
     // Compute updated ranges locally so UI reflects changes immediately
@@ -1236,6 +1263,6 @@ async function loadMeals() {
     estimateMacros, saveAiEstimate, discardAiEstimate,
     analyzeMeal, logAnalyzedMeal,
     loadSettings, saveSettings, settingsToggle, updateSettingsTargets,
-    switchTab, setTheme, toggleThemeMenu,
+    switchTab, setTheme, setPendingTheme, toggleThemeMenu,
   };
 })();

@@ -324,9 +324,9 @@
 
         <div class="settings-section-label" style="margin-top:1.5rem;margin-bottom:.5rem;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)">Appearance</div>
         <div class="settings-toggle-group" id="set-theme">
-          <button type="button" class="settings-toggle" data-val="light"  onclick="App.setTheme('light')">Light</button>
-          <button type="button" class="settings-toggle" data-val="dark"   onclick="App.setTheme('dark')">Dark</button>
-          <button type="button" class="settings-toggle" data-val="purple" onclick="App.setTheme('purple')">Purple</button>
+          <button type="button" class="settings-toggle" data-val="light"  onclick="App.settingsToggle('set-theme',this);App.setPendingTheme('light')">Light</button>
+          <button type="button" class="settings-toggle" data-val="dark"   onclick="App.settingsToggle('set-theme',this);App.setPendingTheme('dark')">Dark</button>
+          <button type="button" class="settings-toggle" data-val="purple" onclick="App.settingsToggle('set-theme',this);App.setPendingTheme('purple')">Purple</button>
         </div>
 
         <div class="settings-save">
