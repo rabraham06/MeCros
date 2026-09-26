@@ -9,7 +9,25 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Kalam:wght@400;700&display=swap" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    .desk { max-width: 980px; padding-top: 48px; }
+    html, body { background: linear-gradient(135deg, #0a0010 0%, #1a0035 50%, #0d001a 100%) fixed; background-attachment: fixed; min-height: 100vh; }
+
+    /* Override light-mode CSS variables for the purple theme */
+    :root {
+      --desk:    transparent;
+      --paper:   rgba(28, 0, 53, .75);
+      --field:   rgba(36, 0, 66, .85);
+      --ink:     #f0e8ff;
+      --ink-2:   #c4a8f0;
+      --ink-3:   #9a7ac8;
+      --rule:    #2e0055;
+      --rule-2:  #4a0080;
+      --accent:  #a855f7;
+      --accent-hover: #cc99ff;
+      --accent-ink:   #0a0010;
+      --brick:   #ff6b9d;
+    }
+
+    .desk { max-width: 980px; padding-top: 48px; background: transparent; }
 
     .login {
       display: grid;
@@ -36,6 +54,7 @@
     }
     .switch__btn:hover { color: var(--ink); }
     .switch__btn.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .sheet { background: transparent; box-shadow: none; border: none; }
 
     .login label { display: block; font-size: .88rem; font-weight: 600; margin-bottom: 6px; }
     .login .input { margin-bottom: 16px; max-width: 340px; }
@@ -56,10 +75,10 @@
       justify-self: center;
       width: 100%;
       max-width: 340px;
-      background: var(--field);
+      background: rgba(28, 0, 53, .8);
       padding: 12px 12px 8px;
-      border: 1px solid var(--rule-2);
-      box-shadow: 0 16px 24px -18px rgba(50, 35, 15, .55);
+      border: 1px solid rgba(168, 85, 247, .35);
+      box-shadow: 0 16px 40px rgba(120, 0, 200, .35);
       transform: rotate(2deg);
     }
     .snap::before {
@@ -70,8 +89,8 @@
       width: 96px;
       height: 26px;
       transform: translateX(-50%) rotate(-3deg);
-      background: rgba(236, 222, 186, .78);
-      border: 1px solid rgba(180, 160, 120, .35);
+      background: rgba(168, 85, 247, .25);
+      border: 1px solid rgba(168, 85, 247, .4);
     }
     .snap img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
     .snap figcaption { font-family: var(--hand); color: var(--ink-2); font-size: 1.1rem; padding-top: 6px; }
