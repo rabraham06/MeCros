@@ -410,11 +410,21 @@ const db = initDb();
     const { name } = req.body;
     if (!isStr(name, 200)) return bad(res, 'Food name required (max 200 chars)');
     try {
-      const json = await generateNutrition(FOOD_SYSTEM_PROMPT, `Estimate the macronutrients per 100g for: "${name}".
-Reply with ONLY a valid JSON object, no explanation or markdown:
-{"calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}
-Use realistic average values for this food.`);
+      const json = await generateNutrition(FOOD_SYSTEM_PROMPT, `Estimate nutrition for the FULL portion described by the user: "${name}".
+Honor whole versus slice, size, counts, weights, brand, and toppings. A whole large pizza means the entire pizza, not one slice or 100g. If no portion is specified, choose one typical serving and state it.
+Return ONLY JSON:
+{"portion": "brief description of the full portion", "amount_g": number, "assumptions": "portion and recipe assumptions", "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}
+All nutrients are TOTALS for that full portion. amount_g is the estimated total edible weight in grams. All numbers must be finite and nonnegative, and weight must be positive.
+For branded food with unspecified crust, size or regional recipe, state your assumptions explicitly. Do not claim verified restaurant nutrition or exact accuracy. Include all toppings. If not food, return {"error":"not_food"}.`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a food or drink. Please enter a food name.' });
+      if (!Number.isFinite(json.amount_g) || json.amount_g <= 0 || json.amount_g > 10000 ||
+          typeof json.portion !== 'string' || !json.portion.trim() || json.portion.length > 300 ||
+          typeof json.assumptions !== 'string' || json.assumptions.length > 1000 ||
+          ['calories', 'protein', 'carbs', 'fat', 'fiber'].some(key =>
+            !Number.isFinite(json[key]) || json[key] < 0 ||
+            json[key] / json.amount_g * 100 > (key === 'calories' ? 900 : 100))) {
+        throw new Error('Invalid portion nutrition response');
+      }
       res.json(json);
     } catch (err) {
       console.error('AI estimate failed', { status: err.status || 500 });
