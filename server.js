@@ -3,10 +3,29 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenAI } = require('@google/genai');
 const initDb = require('./database');
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const gemini = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+  : null;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+async function generateNutrition(systemInstruction, contents) {
+  if (!gemini) throw new Error('GEMINI_API_KEY is not configured');
+  const response = await gemini.models.generateContent({
+    model: GEMINI_MODEL,
+    contents,
+    config: {
+      systemInstruction,
+      responseMimeType: 'application/json',
+      maxOutputTokens: 8192,
+      httpOptions: { timeout: 30000 },
+    },
+  });
+  if (!response.text) throw new Error('Gemini returned no nutrition data');
+  return JSON.parse(response.text);
+}
 
 const app = express();
 app.use(express.json());
@@ -27,7 +46,7 @@ app.use('/api', rateLimit({
   message: { error: 'Too many requests — please slow down.' },
 }));
 
-// AI estimate: 10 requests per minute to protect Anthropic API costs
+// AI estimate: 10 requests per minute to protect Gemini API costs
 app.use('/api/foods/estimate', rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -391,24 +410,14 @@ const db = initDb();
     const { name } = req.body;
     if (!isStr(name, 200)) return bad(res, 'Food name required (max 200 chars)');
     try {
-      const message = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 256,
-        system: FOOD_SYSTEM_PROMPT,
-        messages: [{
-          role: 'user',
-          content: `Estimate the macronutrients per 100g for: "${name}".
+      const json = await generateNutrition(FOOD_SYSTEM_PROMPT, `Estimate the macronutrients per 100g for: "${name}".
 Reply with ONLY a valid JSON object, no explanation or markdown:
 {"calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}
-Use realistic average values for this food.`
-        }]
-      });
-      const raw = message.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      const json = JSON.parse(raw);
+Use realistic average values for this food.`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a food or drink. Please enter a food name.' });
       res.json(json);
     } catch (err) {
-      console.error('AI estimate error:', err.message);
+      console.error('AI estimate failed', { status: err.status || 500 });
       res.status(500).json({ error: 'Failed to estimate macros' });
     }
   });
@@ -418,13 +427,7 @@ Use realistic average values for this food.`
     const { description } = req.body;
     if (!isStr(description, 5000)) return bad(res, 'Meal description required (max 5000 chars)');
     try {
-      const message = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
-        system: FOOD_SYSTEM_PROMPT,
-        messages: [{
-          role: 'user',
-          content: `A user ate: "${description.trim()}"
+      const json = await generateNutrition(FOOD_SYSTEM_PROMPT, `A user ate: "${description.trim()}"
 
 Estimate the macronutrients for each distinct food item and the combined total.
 If the same food appears multiple times (e.g. "3 McChickens"), list it ONCE with qty set to the count.
@@ -437,15 +440,11 @@ Reply with ONLY a valid JSON object, no explanation or markdown:
   "total": { "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number }
 }
 calories/protein/carbs/fat/fiber are for ONE unit of that item (not the total qty, not per 100g).
-qty defaults to 1 if not a repeated item.`,
-        }]
-      });
-      const raw = message.content[0].text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      const json = JSON.parse(raw);
+qty defaults to 1 if not a repeated item.`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a meal description. Please describe what you ate.' });
       res.json(json);
     } catch (err) {
-      console.error('AI meal analyze error:', err.message);
+      console.error('AI meal analysis failed', { status: err.status || 500 });
       res.status(500).json({ error: 'Failed to analyze meal' });
     }
   });
