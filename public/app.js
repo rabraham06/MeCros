@@ -801,20 +801,24 @@ async function loadMeals() {
   async function estimateMacros() {
     const name = document.getElementById('food-search').value.trim();
     if (!name) return toast('Type a food name first', 'error');
+    discardAiEstimate();
+    const requestedMealId = addFoodMealId;
     const btn = document.getElementById('estimate-btn');
     btn.textContent = 'Estimating…';
     btn.disabled = true;
     try {
       const data = await post('/api/foods/estimate', { name });
-      aiEstimateData = { name, ...data };
-      const amount = 100;
+      if (addFoodMealId !== requestedMealId || document.getElementById('food-search').value.trim() !== name) return;
+      aiEstimateData = { ...data, name };
+
       const scale  = 1;
-      document.getElementById('ai-estimate-name').textContent = `${name}, per 100 g (estimated)`;
+      document.getElementById('ai-estimate-name').textContent = `${data.portion} (estimated total) — ${data.assumptions}`;
       document.getElementById('ai-estimate-values').innerHTML = `
         <span><strong>${(data.calories * scale).toFixed(0)}</strong> kcal</span>
         <span>Protein <strong>${(data.protein * scale).toFixed(1)}g</strong></span>
         <span>Carbs <strong>${(data.carbs * scale).toFixed(1)}g</strong></span>
-        <span>Fat <strong>${(data.fat * scale).toFixed(1)}g</strong></span>`;
+        <span>Fat <strong>${(data.fat * scale).toFixed(1)}g</strong></span>
+        <span>Fiber <strong>${(data.fiber * scale).toFixed(1)}g</strong></span>`;
       document.getElementById('ai-estimate-result').classList.remove('hidden');
     } catch {
       toast('Couldn’t estimate that one', 'error');
@@ -828,13 +832,13 @@ async function loadMeals() {
     if (!aiEstimateData || !addFoodMealId) return;
     const food = await post('/api/foods', {
       name:               aiEstimateData.name,
-      calories_per_100g:  aiEstimateData.calories,
-      protein_per_100g:   aiEstimateData.protein,
-      carbs_per_100g:     aiEstimateData.carbs,
-      fat_per_100g:       aiEstimateData.fat,
-      fiber_per_100g:     aiEstimateData.fiber || 0,
+      calories_per_100g:  aiEstimateData.calories * 100 / aiEstimateData.amount_g,
+      protein_per_100g:   aiEstimateData.protein * 100 / aiEstimateData.amount_g,
+      carbs_per_100g:     aiEstimateData.carbs * 100 / aiEstimateData.amount_g,
+      fat_per_100g:       aiEstimateData.fat * 100 / aiEstimateData.amount_g,
+      fiber_per_100g:     aiEstimateData.fiber * 100 / aiEstimateData.amount_g,
     });
-    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: food.id, amount_g: 100 });
+    await post(`/api/meals/${addFoodMealId}/foods`, { food_id: food.id, amount_g: aiEstimateData.amount_g, qty: 1 });
     toast(aiEstimateData.name + ' added');
     discardAiEstimate();
     loadMeals();
