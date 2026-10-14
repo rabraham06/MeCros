@@ -34,6 +34,10 @@ const App = (() => {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   }
+  // api() throws with the raw response body; pull out the server's { error } message if there is one.
+  function apiErrorMessage(err, fallback) {
+    try { return JSON.parse(err.message).error || fallback; } catch { return fallback; }
+  }
   const get   = p     => api('GET',    p);
   const post  = (p,b) => api('POST',   p, b);
   const patch = (p,b) => api('PATCH',  p, b);
@@ -820,8 +824,8 @@ async function loadMeals() {
         <span>Fat <strong>${(data.fat * scale).toFixed(1)}g</strong></span>
         <span>Fiber <strong>${(data.fiber * scale).toFixed(1)}g</strong></span>`;
       document.getElementById('ai-estimate-result').classList.remove('hidden');
-    } catch {
-      toast('Couldn’t estimate that one', 'error');
+    } catch (err) {
+      toast(apiErrorMessage(err, 'Couldn’t estimate that one'), 'error');
     } finally {
       btn.textContent = 'Not listed? Estimate it';
       btn.disabled = false;
@@ -886,8 +890,8 @@ async function loadMeals() {
       const data = await post('/api/nutrition/analyze', { description: desc });
       lastAnalysisData = data;
       renderMealAnalysis(data, desc);
-    } catch {
-      toast('Couldn’t read that meal, try rewording it', 'error');
+    } catch (err) {
+      toast(apiErrorMessage(err, 'Couldn’t read that meal, try rewording it'), 'error');
     } finally {
       btn.textContent = 'Estimate';
       btn.disabled = false;
