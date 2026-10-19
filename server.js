@@ -504,8 +504,10 @@ For branded food with unspecified crust, size or regional recipe, state your ass
 Estimate the macronutrients for each distinct food item.
 The description may be casual, misspelled, or a restaurant order (e.g. a Chipotle or Qdoba bowl with listed ingredients). Interpret it charitably and use that restaurant's typical portions.
 If the same food appears multiple times (e.g. "3 McChickens"), list it ONCE with qty set to the count.
-calories/protein/carbs/fat/fiber are for ONE unit of that item (not the total qty, not per 100g). qty defaults to 1.
-Only if the description clearly is not food or drink, return {"error":"not_food"}.`);
+calories/protein/carbs/fat/fiber are per ONE unit of that item (not the total qty, not per 100g). qty defaults to 1.
+Only if the description clearly is not food or drink, return {"error":"not_food"}.
+Return ONLY valid JSON in this exact shape:
+{"items":[{"name":"string","qty":number,"calories":number,"protein":number,"carbs":number,"fat":number,"fiber":number}]}`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a meal description. Please describe what you ate.' });
       const items = Array.isArray(json.items) ? json.items : [];
       if (!items.length || items.length > 50 || items.some(item =>
