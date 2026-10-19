@@ -3,60 +3,46 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
-const { GoogleGenAI } = require('@google/genai');
+const Anthropic = require('@anthropic-ai/sdk');
 const initDb = require('./database');
 
-const gemini = process.env.GEMINI_API_KEY
-  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-// Macro estimates don't need deep reasoning; default thinking made each call take several seconds.
-const GEMINI_THINKING_LEVEL = process.env.GEMINI_THINKING_LEVEL || 'LOW';
-const GEMINI_ATTEMPT_TIMEOUT_MS = 12000;
-const GEMINI_MAX_ATTEMPTS = 2;
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
+const CLAUDE_MAX_ATTEMPTS = 2;
 
-// Overloaded (503), deadline (504), internal (500) and client-side timeouts are worth one quick retry.
 function isRetryable(err) {
-  return !err.status || [500, 503, 504].includes(err.status);
+  const status = err.status || err.statusCode;
+  return !status || [500, 503, 504].includes(status);
 }
 
-async function generateNutrition(systemInstruction, contents, responseJsonSchema) {
-  if (!gemini) throw new Error('GEMINI_API_KEY is not configured');
-  let thinkingConfig = GEMINI_THINKING_LEVEL ? { thinkingLevel: GEMINI_THINKING_LEVEL } : undefined;
+async function generateNutrition(systemInstruction, userMessage) {
+  if (!anthropic) throw new Error('ANTHROPIC_API_KEY is not configured');
   let lastErr;
-  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= CLAUDE_MAX_ATTEMPTS; attempt++) {
     try {
-      const response = await gemini.models.generateContent({
-        model: GEMINI_MODEL,
-        contents,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseJsonSchema,
-          thinkingConfig,
-          maxOutputTokens: 4096,
-          // SDK default is 5 attempts with exponential backoff, which left users waiting 30s+; retry ourselves instead.
-          httpOptions: { timeout: GEMINI_ATTEMPT_TIMEOUT_MS, retryOptions: { attempts: 1 } },
-        },
+      const response = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 1024,
+        system: systemInstruction,
+        messages: [{ role: 'user', content: userMessage }],
       });
-      if (!response.text) throw new Error('Gemini returned no nutrition data');
-      return JSON.parse(response.text);
+      const text = response.content[0]?.text;
+      if (!text) throw new Error('Claude returned no nutrition data');
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON found in Claude response');
+      return JSON.parse(match[0]);
     } catch (err) {
       lastErr = err;
-      // Model doesn't accept this thinking level: drop it and retry immediately.
-      if (err.status === 400 && thinkingConfig && /thinking/i.test(err.message)) {
-        thinkingConfig = undefined;
-        attempt--;
-        continue;
-      }
-      if (!isRetryable(err) || attempt === GEMINI_MAX_ATTEMPTS) break;
+      if (!isRetryable(err) || attempt === CLAUDE_MAX_ATTEMPTS) break;
       await new Promise(r => setTimeout(r, 500));
     }
   }
   throw lastErr;
 }
 
-// Maps Gemini failures to a status and message the user can act on.
+// Maps Claude failures to a status and message the user can act on.
 function aiErrorResponse(res, err, fallbackMessage) {
   if (err.status === 429) {
     return res.status(429).json({ error: 'The AI quota is used up for now — try again in a bit.' });
@@ -491,7 +477,7 @@ Honor whole versus slice, size, counts, weights, brand, and toppings. A whole la
 Return ONLY JSON:
 {"portion": "brief description of the full portion", "amount_g": number, "assumptions": "portion and recipe assumptions", "calories": number, "protein": number, "carbs": number, "fat": number, "fiber": number}
 All nutrients are TOTALS for that full portion. amount_g is the estimated total edible weight in grams. All numbers must be finite and nonnegative, and weight must be positive.
-For branded food with unspecified crust, size or regional recipe, state your assumptions explicitly. Do not claim verified restaurant nutrition or exact accuracy. Include all toppings. Misspellings and casual phrasing are fine. Only if clearly not food, return {"error":"not_food"}.`, ESTIMATE_SCHEMA);
+For branded food with unspecified crust, size or regional recipe, state your assumptions explicitly. Do not claim verified restaurant nutrition or exact accuracy. Include all toppings. Misspellings and casual phrasing are fine. Only if clearly not food, return {"error":"not_food"}.`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a food or drink. Please enter a food name.' });
       if (!Number.isFinite(json.amount_g) || json.amount_g <= 0 || json.amount_g > 10000 ||
           typeof json.portion !== 'string' || !json.portion.trim() || json.portion.length > 300 ||
@@ -519,7 +505,7 @@ Estimate the macronutrients for each distinct food item.
 The description may be casual, misspelled, or a restaurant order (e.g. a Chipotle or Qdoba bowl with listed ingredients). Interpret it charitably and use that restaurant's typical portions.
 If the same food appears multiple times (e.g. "3 McChickens"), list it ONCE with qty set to the count.
 calories/protein/carbs/fat/fiber are for ONE unit of that item (not the total qty, not per 100g). qty defaults to 1.
-Only if the description clearly is not food or drink, return {"error":"not_food"}.`, ANALYZE_SCHEMA);
+Only if the description clearly is not food or drink, return {"error":"not_food"}.`);
       if (json.error === 'not_food') return res.status(400).json({ error: 'That doesn\'t look like a meal description. Please describe what you ate.' });
       const items = Array.isArray(json.items) ? json.items : [];
       if (!items.length || items.length > 50 || items.some(item =>
